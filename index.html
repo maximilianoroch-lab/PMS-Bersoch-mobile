@@ -176,6 +176,7 @@ function speakVoice(text){
  utter.lang='es-AR';utter.rate=1.25;utter.pitch=1;currentUtterance=utter;
  const voices=speechSynthesis.getVoices();const preferred=voices.find(v=>v.lang.toLowerCase()==='es-ar')||voices.find(v=>v.lang.toLowerCase().startsWith('es'));
  if(preferred)utter.voice=preferred;
+ utter.onerror=e=>{if(currentUtterance===utter&&!['canceled','interrupted'].includes(e.error)){voiceText.textContent='No se pudo reproducir el audio. El contenido permanece disponible en pantalla.';}};
  window.speechSynthesis.speak(utter);
 }
 function closeVoice(){stopVoice();voiceDialog.classList.remove('open')}
