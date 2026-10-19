@@ -173,7 +173,7 @@ function stopVoice(){if('speechSynthesis' in window){window.speechSynthesis.canc
 function speakVoice(text){
  if(!('speechSynthesis' in window)){alert('Este navegador no ofrece lectura en voz alta. Podés leer el resumen en pantalla.');return}
  stopVoice();const utter=new SpeechSynthesisUtterance(text.replace(/US\$/g,'dólares ').replace(/\bBTC\b/g,'bitcoin'));
- utter.lang='es-AR';utter.rate=0.96;utter.pitch=1;currentUtterance=utter;
+ utter.lang='es-AR';utter.rate=1.25;utter.pitch=1;currentUtterance=utter;
  const voices=speechSynthesis.getVoices();const preferred=voices.find(v=>v.lang.toLowerCase()==='es-ar')||voices.find(v=>v.lang.toLowerCase().startsWith('es'));
  if(preferred)utter.voice=preferred;
  window.speechSynthesis.speak(utter);
