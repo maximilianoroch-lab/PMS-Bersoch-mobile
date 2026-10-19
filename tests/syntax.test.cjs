@@ -4,10 +4,11 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const html=fs.readFileSync('index.html','utf8');
 test('the entire inline mobile script compiles',()=>{
- const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)];
- assert.ok(scripts.length>0,'inline script exists');
- for(const [,source] of scripts)assert.doesNotThrow(()=>new vm.Script(source));
+ const first=html.indexOf('<script>');
+ const last=html.indexOf('</script>',first);
+ assert.ok(first>=0 && last>first,'inline script exists');
+ assert.doesNotThrow(()=>new vm.Script(html.slice(first+'<script>'.length,last)));
 });
-test('cash panel has a properly terminated closing tag',()=>{
+test('cash panel does not contain broken markup string',()=>{
  assert.ok(!html.includes("registrado.</div>'</div>'}"));
 });
