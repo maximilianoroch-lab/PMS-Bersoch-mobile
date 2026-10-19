@@ -169,10 +169,18 @@ let currentUtterance=null,voiceMode='summary',chatHistory=[],voiceBusy=false;
 const numberAR=n=>new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(n||0);
 const percentageAR=n=>new Intl.NumberFormat('es-AR',{style:'percent',minimumFractionDigits:1,maximumFractionDigits:1}).format(n||0);
 const escapeText=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TICKER_LETTERS={A:'a',B:'be',C:'ce',D:'de',E:'e',F:'efe',G:'ge',H:'hache',I:'i',J:'jota',K:'ca',L:'ele',M:'eme',N:'ene',O:'o',P:'pe',Q:'cu',R:'erre',S:'ese',T:'te',U:'u',V:'ve',W:'doble ve',X:'equis',Y:'i griega',Z:'zeta'};
+function textForSpeech(raw){
+ const tickers=new Set(positions.map(p=>String(p.Ticker||'').trim().toUpperCase()).filter(Boolean));
+ return String(raw).replace(/US\$/g,'dólares ').replace(/\b[A-Z][A-Z0-9.]{1,11}\b/g,token=>{
+  if(!tickers.has(token))return token;
+  return [...token].map(ch=>TICKER_LETTERS[ch]||ch).join(', ');
+ });
+}
 function stopVoice(){if('speechSynthesis' in window){window.speechSynthesis.cancel()}currentUtterance=null}
 function speakVoice(text){
  if(!('speechSynthesis' in window)){alert('Este navegador no ofrece lectura en voz alta. Podés leer el resumen en pantalla.');return}
- stopVoice();const utter=new SpeechSynthesisUtterance(text.replace(/US\$/g,'dólares ').replace(/\bBTC\b/g,'bitcoin'));
+ stopVoice();const utter=new SpeechSynthesisUtterance(textForSpeech(text));
  utter.lang='es-AR';utter.rate=1.25;utter.pitch=1;currentUtterance=utter;
  const voices=speechSynthesis.getVoices();const preferred=voices.find(v=>v.lang.toLowerCase()==='es-ar')||voices.find(v=>v.lang.toLowerCase().startsWith('es'));
  if(preferred)utter.voice=preferred;
