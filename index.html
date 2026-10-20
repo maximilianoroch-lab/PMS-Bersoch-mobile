@@ -174,7 +174,7 @@ function textForSpeech(raw){
  const tickers=new Set(positions.map(p=>String(p.Ticker||'').trim().toUpperCase()).filter(Boolean));
  return String(raw).replace(/US\$/g,'dólares ').replace(/\b[A-Z][A-Z0-9.]{1,11}\b/g,token=>{
   if(!tickers.has(token))return token;
-  const explicit={GGAL:'ge. ge. a. ele',YPFD:'i griega. pe. efe. de'};return explicit[token]||[...token].map(ch=>TICKER_LETTERS[ch]||ch).join('. ');
+  const explicit={GGAL:'ge. ge. a. ele',YPFD:'i griega. pe. efe. de'};return (explicit[token]||[...token].map(ch=>TICKER_LETTERS[ch]||ch).join('. '))+',';
  });
 }
 function stopVoice(){if('speechSynthesis' in window){window.speechSynthesis.cancel()}currentUtterance=null}
