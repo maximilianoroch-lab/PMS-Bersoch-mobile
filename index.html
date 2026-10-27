@@ -167,7 +167,7 @@ function closeCust(){document.getElementById('custOverlay').classList.remove('op
 document.getElementById('custClose').onclick=closeCust;document.getElementById('custOverlay').onclick=e=>{if(e.target.id==='custOverlay')closeCust()};document.getElementById('search').addEventListener('input',renderPositions);
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${b.dataset.page}`));window.scrollTo({top:0,behavior:'smooth'})});
 async const MONTH_TYPES=['Cripto','ETF','Cedear','Bono AR','Acción AR'];
-const MONTH_COLORS=['#4c70ba','#6cb5a1','#efbb5b','#8ca3ba','#df8c69'];
+const MONTH_COLORS=['#d71920','#ffc000','#80c342','#4472c4','#8c8c8c'];
 const MONTH_NAMES=['Cripto','ETF','CEDEAR','Bonos','Acciones'];
 function monthlySeries(rows){
  const byMonth=new Map(), expected=new Set(positions.filter(r=>MONTH_TYPES.includes(r.Tipo)).map(r=>String(r.Ticker||'').toUpperCase()).filter(Boolean));
