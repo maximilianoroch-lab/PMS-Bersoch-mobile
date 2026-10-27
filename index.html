@@ -196,7 +196,7 @@ function renderMonthlyTypes(){
  if(!lines||!bars)return;
  const pts=monthlySeries(monthlyTypeHistory);
  const legend='<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;margin:6px 0 14px">'+MONTH_NAMES.map((n,i)=>'<span style="color:'+MONTH_COLORS[i]+'">● '+n+'</span>').join('')+'</div>';
- if(!pts.length){lines.innerHTML='<div class="empty">Sin cierres completos por tipo</div>';bars.innerHTML='';note.textContent='Faltan precios históricos conciliados; no se imputan valores.';return;}
+ if(pts.length<2){lines.innerHTML='<div class="empty">Evolución histórica pendiente</div>';bars.innerHTML='<div class="empty">Se necesitan al menos dos cierres mensuales completos.</div>';note.textContent='Los valores disponibles de octubre de 2026 no permiten mostrar la serie desde enero de 2024. No se inventan cierres.';return;}
  const W=320,H=185,l=30,r=8,t=12,b=28;
  const total=p=>p.vals.reduce((a,b)=>a+b,0),max=Math.max(1,...pts.map(total))*1.08;
  const x=i=>l+(W-l-r)*(i+.5)/pts.length, y=v=>H-b-(H-t-b)*v/max;
