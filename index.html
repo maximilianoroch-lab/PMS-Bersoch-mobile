@@ -108,7 +108,7 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 <div class="sheet-overlay" id="custOverlay"><div class="bottomsheet" id="custSheet"><div class="handle"></div><div class="sheet-head"><div><div class="sheet-title" id="custTitle"></div><div class="sheet-total" id="custTotal"></div></div><button class="close" id="custClose">×</button></div><div class="accounts" id="custAccounts"></div><div id="custAssets"></div></div></div>
 <script>
 const SHEET_ID='18qu9LXo55qQZq4oEAq42u_DKaI7e9lZL_PkfUZiu0T0';
-const CACHE_KEY='pms-v2-data-20261011-r11';
+const CACHE_KEY='pms-v2-data-20261027-monthly-types';
 const csvUrl=(sheet,range)=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}${range?`&range=${encodeURIComponent(range)}`:''}`;
 let positions=[],typeRows=[],exposure=[],custSummary=[],custDetail=[],snapshots=[],homeRows=[],bannerRows=[],filterType='Todos',period='D';
 let monthlyTypeHistory=[];
