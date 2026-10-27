@@ -192,7 +192,7 @@ function renderMonthlyTypes(){
  if(pts.length<2)lines.innerHTML='<div class="empty">La curva requiere al menos dos cierres mensuales.</div>';
  else lines.innerHTML=svg(MONTH_TYPES.map((_,k)=>'<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="2.5" points="'+pts.map((p,i)=>x(i)+','+y(p.vals[k])).join(' ')+'"/>').join(''));
  const width=Math.min(27,(W-l-r)/pts.length*.68);
- bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return p.vals.map((v,k)=>{const next=from+v;const rect='<rect x="'+(x(i)-width/2)+'" y="'+y(next)+'" width="'+width+'" height="'+Math.max(0,y(from)-y(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''));
+ bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return [0,3,4,1,2].map(k=>{const v=p.vals[k],next=from+v;const rect='<rect x="'+(x(i)-width/2)+'" y="'+y(next)+'" width="'+width+'" height="'+Math.max(0,y(from)-y(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''));
  note.textContent=pts.length+' meses, en miles de USD. Histórico previo a snapshots: estimación; desde snapshots: observado. No es rentabilidad.';
 }
 function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
