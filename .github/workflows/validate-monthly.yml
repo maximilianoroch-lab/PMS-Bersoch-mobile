@@ -1,0 +1,25 @@
+name: Validate monthly visualizations
+on:
+  push:
+    paths:
+      - index.html
+      - .github/workflows/validate-monthly.yml
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and chart wiring
+        run: |
+          python3 - <<'PY'
+          import pathlib,re
+          s=pathlib.Path('index.html').read_text()
+          js=re.findall(r'<script[^>]*>(.*?)</script>',s,re.S)
+          assert len(js)==1
+          pathlib.Path('/tmp/pms-mobile.js').write_text(js[0])
+          assert 'evolucion_tipo_mensual_estimado' in js[0]
+          assert 'stroke-dasharray' in js[0]
+          assert "[0,3,4,1,2].map" in js[0]
+          PY
+          node --check /tmp/pms-mobile.js
