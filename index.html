@@ -85,6 +85,7 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 </section>
 <section class="page" id="page-evolucion">
  <div class="card"><h2>Evolución patrimonial</h2><div class="sub">Cierres observados, sin completar meses faltantes. Elegí «Mes» para ver los últimos registros disponibles de cada mes. Cambios patrimoniales ≠ rentabilidad.</div><div class="periods" id="periods"></div><div class="periods" id="chartModes"><button class="period active" data-chart="line">Curva</button><button class="period" data-chart="bars">Barras</button></div><svg class="spark" id="spark"></svg><div class="histlist" id="histText"></div></div>
+ <div class="card"><h2>Patrimonio mensual por tipo</h2><div class="sub">Miles de USD. Cripto, ETF, CEDEAR, Bonos y Acciones; solo cierres registrados.</div><h3>Curvas mensuales</h3><div id="typeLines"></div><h3>Barras apiladas</h3><div id="typeBars"></div><div class="sub" id="typeNote"></div></div>
  <div class="card"><h2>Top 15 activos</h2><div class="sub">Principales posiciones: cotización y variación contra la última referencia.</div><div id="top15List"></div></div>
 </section>
 <section class="page" id="page-posiciones">
@@ -110,6 +111,7 @@ const SHEET_ID='18qu9LXo55qQZq4oEAq42u_DKaI7e9lZL_PkfUZiu0T0';
 const CACHE_KEY='pms-v2-data-20261011-r11';
 const csvUrl=(sheet,range)=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}${range?`&range=${encodeURIComponent(range)}`:''}`;
 let positions=[],typeRows=[],exposure=[],custSummary=[],custDetail=[],snapshots=[],homeRows=[],bannerRows=[],filterType='Todos',period='D';
+let monthlyTypeHistory=[];
 function parseCSV(text){const out=[];let row=[],cur='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'&&text[i+1]==='"'){cur+='"';i++}else if(c==='"')q=false;else cur+=c}else{if(c==='"')q=true;else if(c===','){row.push(cur);cur=''}else if(c==='\n'){row.push(cur);out.push(row);row=[];cur=''}else if(c!=='\r')cur+=c}}if(cur.length||row.length){row.push(cur);out.push(row)}return out}
 function table(csv){const a=parseCSV(csv);if(!a.length)return[];const h=a[0].map(x=>x.trim());return a.slice(1).filter(r=>r.some(x=>String(x).trim()!=='')).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]??''])))}
 function num(v){if(v===null||v===undefined||v==='')return 0;let s=String(v).trim().replace(/[$%\s]/g,'');if(s.includes(',')&&!s.includes('.'))s=s.replace(',','.');else if(s.includes(',')&&s.includes('.')){if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'')}const n=Number(s);return Number.isFinite(n)?n:0}
@@ -141,7 +143,7 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
 }
 function renderBanner(){const msgs=bannerRows.filter(r=>['ALERTA','REVISAR','ATENCIÓN'].includes(String(r.Estado||'').toUpperCase())).map(r=>r.Mensaje).filter(Boolean);const el=document.getElementById('banner');if(msgs.length){el.textContent=msgs.join(' · ');el.classList.remove('hidden')}else el.classList.add('hidden')}
 function aggregateSnaps(p){const ordered=snapshots.slice().filter(x=>parseDate(x.date)).sort((a,b)=>parseDate(a.date)-parseDate(b.date));if(p==='D')return ordered;const m=new Map();ordered.forEach(x=>{const d=parseDate(x.date);if(!d)return;let key;if(p==='S'){const dt=new Date(d);const day=(dt.getDay()+6)%7;dt.setDate(dt.getDate()-day);key=dt.toISOString().slice(0,10)}else if(p==='M')key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;else key=String(d.getFullYear());m.set(key,x)});return[...m.values()]}
-function renderSnapshots(){const periods=[['D','Día'],['S','Sem'],['M','Mes'],['A','Año']];['periods','homePeriods'].forEach(id=>{const e=document.getElementById(id);e.innerHTML=periods.map(x=>`<button class="period ${period===x[0]?'active':''}" data-period="${x[0]}">${x[1]}</button>`).join('');e.querySelectorAll('.period').forEach(b=>b.onclick=()=>{period=b.dataset.period;renderSnapshots()})});const data=aggregateSnaps(period);drawSpark('spark',data);drawSpark('homeSpark',data);const txt=data.slice(-8).map((x,i)=>{const idx=data.indexOf(x),prev=idx>0?data[idx-1]:null;const delta=prev?x.value-prev.value:null;const pctChange=prev&&prev.value>0?delta/prev.value:null;const sign=delta>0?'+':'';return `${dateFmt(x.date)} · ${usd(x.value)}${delta===null?'':` · ${sign}${usd(delta)} (${sign}${(pctChange*100).toFixed(2).replace('.',',')}%)`}`}).join('<br>');document.getElementById('histText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">La comparación es contra el snapshot anterior disponible, no necesariamente el día anterior.</div>';document.getElementById('homeHistText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">Cambios patrimoniales entre snapshots disponibles; sin ajuste por aportes/retiros. No equivalen a rentabilidad diaria.</div>'}
+function renderSnapshots(){renderMonthlyTypes();const periods=[['D','Día'],['S','Sem'],['M','Mes'],['A','Año']];['periods','homePeriods'].forEach(id=>{const e=document.getElementById(id);e.innerHTML=periods.map(x=>`<button class="period ${period===x[0]?'active':''}" data-period="${x[0]}">${x[1]}</button>`).join('');e.querySelectorAll('.period').forEach(b=>b.onclick=()=>{period=b.dataset.period;renderSnapshots()})});const data=aggregateSnaps(period);drawSpark('spark',data);drawSpark('homeSpark',data);const txt=data.slice(-8).map((x,i)=>{const idx=data.indexOf(x),prev=idx>0?data[idx-1]:null;const delta=prev?x.value-prev.value:null;const pctChange=prev&&prev.value>0?delta/prev.value:null;const sign=delta>0?'+':'';return `${dateFmt(x.date)} · ${usd(x.value)}${delta===null?'':` · ${sign}${usd(delta)} (${sign}${(pctChange*100).toFixed(2).replace('.',',')}%)`}`}).join('<br>');document.getElementById('histText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">La comparación es contra el snapshot anterior disponible, no necesariamente el día anterior.</div>';document.getElementById('homeHistText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">Cambios patrimoniales entre snapshots disponibles; sin ajuste por aportes/retiros. No equivalen a rentabilidad diaria.</div>'}
 let monthlyChartMode='line';
 function drawSpark(id,data){const svg=document.getElementById(id);if(!data.length){svg.innerHTML='';return}
 const vals=data.map(x=>x.value),low=Math.min(...vals),high=Math.max(...vals),span=Math.max(high-low,Math.abs(high)*0.02,1),min=Math.max(0,low-span*0.15),max=high+span*0.15,W=320,H=140,p=12;
@@ -164,12 +166,55 @@ function openCustodian(name,selectedAccount='',selectedTicker=''){const c=custSu
 function closeCust(){document.getElementById('custOverlay').classList.remove('open')}
 document.getElementById('custClose').onclick=closeCust;document.getElementById('custOverlay').onclick=e=>{if(e.target.id==='custOverlay')closeCust()};document.getElementById('search').addEventListener('input',renderPositions);
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${b.dataset.page}`));window.scrollTo({top:0,behavior:'smooth'})});
-async function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
+async const MONTH_TYPES=['Cripto','ETF','Cedear','Bono AR','Acción AR'];
+const MONTH_COLORS=['#4c70ba','#6cb5a1','#efbb5b','#8ca3ba','#df8c69'];
+const MONTH_NAMES=['Cripto','ETF','CEDEAR','Bonos','Acciones'];
+function monthlySeries(rows){
+ const byMonth=new Map(), expected=new Set(positions.filter(r=>MONTH_TYPES.includes(r.Tipo)).map(r=>String(r.Ticker||'').toUpperCase()).filter(Boolean));
+ for(const r of rows){
+  const d=parseDate(r.Fecha), type=MONTH_TYPES.indexOf(r.Tipo),ticker=String(r.Ticker||'').toUpperCase();
+  if(!d||type<0||!ticker)continue;
+  const month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),day=d.getTime();
+  if(!byMonth.has(month))byMonth.set(month,new Map());
+  const m=byMonth.get(month);
+  if(!m.has(day))m.set(day,new Map());
+  m.get(day).set(ticker,{type,value:num(r['Valor USD'])});
+ }
+ const points=[];
+ for(const [mes,days] of [...byMonth].sort((a,b)=>a[0].localeCompare(b[0]))){
+  const latest=days.get(Math.max(...days.keys()));let complete=latest.size>0;
+  for(const t of expected)if(!latest.has(t))complete=false;
+  if(!complete)continue;
+  const vals=MONTH_TYPES.map(()=>0);
+  latest.forEach(r=>{if(!Number.isFinite(r.value)||r.value<0)complete=false;else vals[r.type]+=r.value/1000;});
+  if(complete)points.push({mes,vals});
+ }
+ return points;
+}
+function renderMonthlyTypes(){
+ const lines=document.getElementById('typeLines'),bars=document.getElementById('typeBars'),note=document.getElementById('typeNote');
+ if(!lines||!bars)return;
+ const pts=monthlySeries(monthlyTypeHistory);
+ const legend='<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;margin:6px 0 14px">'+MONTH_NAMES.map((n,i)=>'<span style="color:'+MONTH_COLORS[i]+'">● '+n+'</span>').join('')+'</div>';
+ if(!pts.length){lines.innerHTML='<div class="empty">Sin cierres completos por tipo</div>';bars.innerHTML='';note.textContent='Faltan precios históricos conciliados; no se imputan valores.';return;}
+ const W=320,H=185,l=30,r=8,t=12,b=28;
+ const total=p=>p.vals.reduce((a,b)=>a+b,0),max=Math.max(1,...pts.map(total))*1.08;
+ const x=i=>l+(W-l-r)*(i+.5)/pts.length, y=v=>H-b-(H-t-b)*v/max;
+ const labels=pts.map((p,i)=>'<text x="'+x(i)+'" y="'+(H-7)+'" fill="#9eb5cb" font-size="10" text-anchor="middle">'+p.mes.slice(2)+'</text>').join('');
+ const grid=[0,.25,.5,.75,1].map(v=>'<line x1="'+l+'" x2="'+(W-r)+'" y1="'+y(max*v)+'" y2="'+y(max*v)+'" stroke="#32455b"/><text x="'+(l-4)+'" y="'+(y(max*v)+3)+'" fill="#9eb5cb" text-anchor="end" font-size="9">'+(max*v).toFixed(0)+'</text>').join('');
+ const svg=(content)=>'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Evolución mensual en miles de dólares">'+grid+labels+content+'</svg>'+legend;
+ if(pts.length<2)lines.innerHTML='<div class="empty">La curva requiere al menos dos cierres mensuales.</div>';
+ else lines.innerHTML=svg(MONTH_TYPES.map((_,k)=>'<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="2.5" points="'+pts.map((p,i)=>x(i)+','+y(p.vals[k])).join(' ')+'"/>').join(''));
+ const width=Math.min(27,(W-l-r)/pts.length*.68);
+ bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return p.vals.map((v,k)=>{const next=from+v;const rect='<rect x="'+(x(i)-width/2)+'" y="'+y(next)+'" width="'+width+'" height="'+Math.max(0,y(from)-y(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''));
+ note.textContent=pts.length+' mes(es) con cierres completos. Las cifras excluyen otros tipos y no representan rentabilidad.';
+}
+function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
 function saveCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}))}catch(e){}}
 function loadCache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(e){return null}}
-async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100']];const texts=await Promise.all(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>data[x[0]]=x[0]==='exposure'?parseExposure(texts[i]):table(texts[i]));applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
+async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','historial_precios','A1:J5000']];const texts=await Promise.all(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>data[x[0]]=x[0]==='exposure'?parseExposure(texts[i]):table(texts[i]));applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
 function parseExposure(csv){const a=parseCSV(csv),out=[];for(let i=1;i<a.length;i++){const r=a[i]||[];if(r[0]||r[4])out.push({Región:r[0]||'',regionValue:num(r[1]),Sector:r[4]||'',sectorValue:num(r[5])})}return out}
-function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[]}
+function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[];monthlyTypeHistory=d.monthlyTypes||[]}
 document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});load();
 
 // Funciones de voz: resumen determinista, asesor a través de endpoint seguro.
