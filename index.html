@@ -108,7 +108,7 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 <div class="sheet-overlay" id="custOverlay"><div class="bottomsheet" id="custSheet"><div class="handle"></div><div class="sheet-head"><div><div class="sheet-title" id="custTitle"></div><div class="sheet-total" id="custTotal"></div></div><button class="close" id="custClose">×</button></div><div class="accounts" id="custAccounts"></div><div id="custAssets"></div></div></div>
 <script>
 const SHEET_ID='18qu9LXo55qQZq4oEAq42u_DKaI7e9lZL_PkfUZiu0T0';
-const CACHE_KEY='pms-v2-data-20261027-monthly-estimated-34';
+const CACHE_KEY='pms-v2-monthly-black-annual-20261027';
 const csvUrl=(sheet,range)=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}${range?`&range=${encodeURIComponent(range)}`:''}`;
 let positions=[],typeRows=[],exposure=[],custSummary=[],custDetail=[],snapshots=[],homeRows=[],bannerRows=[],filterType='Todos',period='D';
 let monthlyTypeHistory=[];
@@ -189,7 +189,7 @@ function renderMonthlyTypes(){
  const labels=pts.map((p,i)=>i%3===0||i===pts.length-1?'<text x="'+x(i)+'" y="'+(H-7)+'" fill="#9eb5cb" font-size="10" text-anchor="middle">'+p.mes.slice(2)+'</text>':'').join('');
  const grid=[0,.25,.5,.75,1].map(v=>'<line x1="'+l+'" x2="'+(W-r)+'" y1="'+y(max*v)+'" y2="'+y(max*v)+'" stroke="#32455b"/><text x="'+(l-4)+'" y="'+(y(max*v)+3)+'" fill="#9eb5cb" text-anchor="end" font-size="9">'+(max*v).toFixed(0)+'</text>').join('');
  const annual=pts.map((p,i)=>p.mes.endsWith('-12')?'<line x1="'+(x(i)+(W-l-r)/pts.length*.5)+'" x2="'+(x(i)+(W-l-r)/pts.length*.5)+'" y1="'+t+'" y2="'+(H-b)+'" stroke="#eeeeee" stroke-width="1.5" stroke-dasharray="4 5"/>':'').join('');
- const svg=(content)=>'<div style="overflow-x:auto;background:#000;border-radius:8px"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+W+'px;max-width:none;height:auto;background:#000" role="img" aria-label="Evolución mensual en miles de dólares">'+grid+annual+labels+content+'</svg></div>'+legend;
+ const svg=(content)=>'<div style="background:#000;border-radius:8px;padding:8px"><div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+W+'px;max-width:none;height:auto;background:#000" role="img" aria-label="Evolución mensual en miles de dólares">'+grid+content+annual+labels+'</svg></div>'+legend+'</div>';
  if(pts.length<2)lines.innerHTML='<div class="empty">La curva requiere al menos dos cierres mensuales.</div>';
  else lines.innerHTML=svg(MONTH_TYPES.map((_,k)=>'<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="2.5" points="'+pts.map((p,i)=>x(i)+','+y(p.vals[k])).join(' ')+'"/>').join(''));
  const width=Math.min(27,(W-l-r)/pts.length*.68);
