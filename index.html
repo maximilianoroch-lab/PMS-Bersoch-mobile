@@ -34,7 +34,7 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 .notice{font-size:11px;line-height:1.45;color:#c6d4e2;border:1px solid #564521;background:#201b0d;padding:11px 12px;border-radius:14px;margin-bottom:12px}.notice.hidden{display:none}.empty{color:var(--muted);font-size:12px;padding:16px 0;text-align:center}
 .spark{width:100%;height:150px;display:block}.periods{display:flex;gap:7px;margin-bottom:12px}.period{border:1px solid var(--line);background:#091827;color:#b9c9d8;border-radius:999px;padding:7px 10px;font-size:11px}.period.active{background:#163250;color:#fff}.histlist{font-size:11px;color:var(--muted);line-height:1.6}
 .topasset{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
-.topasset:last-child{border-bottom:0}.topasset-left{min-width:0}.topasset-t{font-size:13px;font-weight:850}.topasset-n{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}.topasset-w{font-size:10px;color:var(--muted);margin-top:4px}.topasset-right{text-align:right}.topasset-q{font-size:12px;font-weight:650;white-space:nowrap}.topasset-q.up{color:var(--up)}.topasset-q.down{color:var(--down)}.topasset-q.flat{color:#d7e5f2}.topasset-chg{margin-top:3px;font-size:11px}
+.mover-row{display:grid;grid-template-columns:minmax(46px,1fr) minmax(78px,1.3fr) minmax(66px,1fr) minmax(66px,1fr);gap:5px;padding:9px 0;border-bottom:1px solid var(--line);font-size:10px;align-items:center;font-variant-numeric:tabular-nums}.mover-head{color:var(--muted);font-size:9px}.mover-row span{overflow-wrap:anywhere}.mover-row .up{color:var(--green)}.mover-row .down{color:var(--red)}.mover-row .flat{color:var(--muted)}.topasset:last-child{border-bottom:0}.topasset-left{min-width:0}.topasset-t{font-size:13px;font-weight:850}.topasset-n{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}.topasset-w{font-size:10px;color:var(--muted);margin-top:4px}.topasset-right{text-align:right}.topasset-q{font-size:12px;font-weight:650;white-space:nowrap}.topasset-q.up{color:var(--up)}.topasset-q.down{color:var(--down)}.topasset-q.flat{color:#d7e5f2}.topasset-chg{margin-top:3px;font-size:11px}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:50;height:calc(var(--nav-h) + var(--safe-b));padding:8px 10px var(--safe-b);background:rgba(8,19,33,.97);border-top:1px solid var(--line);backdrop-filter:blur(14px)}.navinner{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);height:100%}.navbtn{border:0;background:transparent;color:#748ba2;font-size:10px;font-weight:750;padding:4px 2px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}.navbtn .ico{font-size:18px}.navbtn.active{color:#fff}
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:80;display:none}.sheet-overlay.open{display:block}.bottomsheet{position:absolute;left:0;right:0;bottom:0;max-height:82dvh;overflow:auto;background:#0b1928;border:1px solid var(--line);border-radius:24px 24px 0 0;padding:13px 16px calc(22px + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 60px rgba(0,0,0,.35)}.handle{width:44px;height:4px;border-radius:4px;background:#57728b;margin:0 auto 12px}.sheet-head{display:flex;justify-content:space-between;gap:10px}.sheet-title{font-size:20px;font-weight:900}.sheet-total{font-size:13px;color:var(--muted);margin-top:3px}.close{border:0;background:transparent;color:#d7e5f2;font-size:22px}.accounts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.acct{border:1px solid #28445e;background:#0c1d2e;border-radius:13px;padding:9px}.acct .n{font-size:10px;color:var(--muted)}.acct .v{font-size:13px;font-weight:800;margin-top:3px}.assetrow{display:grid;grid-template-columns:minmax(70px,auto) 1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #183149}.assetrow:last-child{border-bottom:0}.asset-t{font-weight:850}.asset-n{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.asset-v{text-align:right;font-weight:800;font-size:12px}.asset-p{font-size:10px;color:var(--muted);text-align:right}
 @media(min-width:620px){.kpis{grid-template-columns:repeat(4,1fr)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid2 .card{margin-bottom:0}}
@@ -86,6 +86,8 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 <section class="page" id="page-evolucion">
  <div class="card"><h2>Evolución patrimonial</h2><div class="sub">Cierres observados, sin completar meses faltantes. Elegí «Mes» para ver los últimos registros disponibles de cada mes. Cambios patrimoniales ≠ rentabilidad.</div><div class="periods" id="periods"></div><div class="periods" id="chartModes"><button class="period active" data-chart="line">Curva</button><button class="period" data-chart="bars">Barras</button></div><svg class="spark" id="spark"></svg><div class="histlist" id="histText"></div></div>
  <div class="card"><h2>Patrimonio mensual por tipo</h2><div class="sub">Miles de USD. Cripto, ETF, CEDEAR, Bonos y Acciones; solo cierres registrados.</div><h3>Curvas mensuales</h3><div id="typeLines"></div><h3>Barras apiladas</h3><div id="typeBars"></div><div class="sub" id="typeNote"></div></div>
+ <div class="card"><h2>Top 10 subas</h2><div class="sub">Orden por variación diaria positiva. El acumulado mensual no modifica el ranking.</div><div id="topRises"></div></div>
+ <div class="card"><h2>Top 10 bajas</h2><div class="sub">Orden por variación diaria negativa, desde la mayor caída.</div><div id="topFalls"></div></div>
  <div class="card"><h2>Top 15 activos</h2><div class="sub">Principales posiciones: cotización y variación contra la última referencia.</div><div id="top15List"></div></div>
 </section>
 <section class="page" id="page-posiciones">
@@ -138,7 +140,7 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
  const topNow=positions.slice().sort((a,b)=>b.value-a.value);
  bars('topBars',topNow.slice(0,5).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});
  const reg=[],sec=[];exposure.forEach(r=>{if(r.Región&&num(r.regionValue)>0)reg.push({name:r.Región,value:num(r.regionValue)});if(r.Sector&&num(r.sectorValue)>0)sec.push({name:r.Sector,value:num(r.sectorValue)})});
- bars('regionBars',reg,total,{scale:50});bars('sectorBars',sec,total,{scale:30});bars('etfBars',positions.filter(r=>r.Tipo==='ETF').sort((a,b)=>b.value-a.value).slice(0,10).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});bars('custBars',custSummary.map(r=>({name:r.Custodio,value:r.value})),total,{scale:40,clickable:true});renderSnapshots();renderTop15(topNow.slice(0,15),total);renderFilters();renderPositions();renderBanner();
+ bars('regionBars',reg,total,{scale:50});bars('sectorBars',sec,total,{scale:30});bars('etfBars',positions.filter(r=>r.Tipo==='ETF').sort((a,b)=>b.value-a.value).slice(0,10).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});bars('custBars',custSummary.map(r=>({name:r.Custodio,value:r.value})),total,{scale:40,clickable:true});renderSnapshots();renderTop15(topNow.slice(0,15),total);renderMovers();renderFilters();renderPositions();renderBanner();
  const dates=positions.map(x=>x['Fecha dato']).filter(Boolean).sort();document.getElementById('asof').textContent=dates.length?`Última actualización de mercado: ${dateFmt(dates[dates.length-1])}`:'Datos cargados';
 }
 function renderBanner(){const msgs=bannerRows.filter(r=>['ALERTA','REVISAR','ATENCIÓN'].includes(String(r.Estado||'').toUpperCase())).map(r=>r.Mensaje).filter(Boolean);const el=document.getElementById('banner');if(msgs.length){el.textContent=msgs.join(' · ');el.classList.remove('hidden')}else el.classList.add('hidden')}
@@ -157,6 +159,89 @@ if(id==='spark'&&monthlyChartMode==='bars'){
 }}
 document.getElementById('chartModes').querySelectorAll('button').forEach(b=>b.onclick=()=>{monthlyChartMode=b.dataset.chart;document.querySelectorAll('#chartModes button').forEach(x=>x.classList.toggle('active',x===b));renderSnapshots()});
 function quoteInfo(r){const dir=r.chg>0?'up':r.chg<0?'down':'flat';const state=String(r['Estado dato']||'').toUpperCase();const isCurrent=state==='ACTUALIZADO';const ref=num(r['Valor ref USD']);const qty=num(r.Cantidad);const isCrypto=r.Tipo==='Cripto';const isFut=r.Ticker==='FUT'||r.Tipo==='Derivado';let text='';if(isCrypto&&qty>0){text=`${isCurrent?'':'Últ. '}${usdQuote(r.value/qty)}`}else if(isFut){const qUsd=qty>0?(ref||r.value)/qty:(ref||r.value);if(qUsd>0)text=`Últ. ${usdQuote(qUsd)}`}else if(r.localCurrency==='ARS'&&r.localPrice>0){text=`${isCurrent?'':'Últ. '}${ars(r.localPrice)}`}else if(r.Ticker==='CASH'&&ref>0){text=`Últ. ${usdQuote(ref)}`}return{text,dir}}
+
+let historicalQuotes=[],historicalError='';
+function priceNumber(value){
+ if(value===undefined||value===null||String(value).trim()==='')return null;
+ const v=String(value).trim().replace(/[$ ]/g,'').replace(/\./g,'').replace(',','.');
+ const n=Number(v);return Number.isFinite(n)?n:null;
+}
+// Numeric entries in raw history use dot decimals, unlike formatted currency cells.
+function rawPrice(value){
+ if(value===undefined||value===null||String(value).trim()==='')return null;
+ let v=String(value).trim().replace(/[$ ]/g,'');
+ if(v.includes(',')&&v.includes('.'))v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.split('.').join('').replace(',','.'):v.split(',').join('');
+ else if(v.includes(','))v=v.replace(',','.');
+ const n=Number(v);return Number.isFinite(n)?n:null;
+}
+const pctMover=n=>n===null?'Sin datos':(n>0?'+':'')+new Intl.NumberFormat('es-AR',{style:'percent',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const priceMover=n=>new Intl.NumberFormat('es-AR',{minimumFractionDigits:0,maximumFractionDigits:4}).format(n);
+const escapeMover=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function calculateMovers(history,portfolio){
+ const currentTickers=new Set(portfolio.map(p=>String(p.Ticker||'').trim().toUpperCase()));
+ const byTicker=new Map(),fxCandidates=new Map();
+ for(const row of history){
+  const ticker=String(row.Ticker||'').trim().toUpperCase(),date=parseDate(row.Fecha);
+  if(!ticker||!date||!currentTickers.has(ticker))continue;
+  const day=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  const currency=String(row.Moneda||'').trim().toUpperCase();
+  const price=rawPrice(row.Precio),usdPrice=rawPrice(row['Precio USD']);
+  if(currency==='ARS'&&price>0&&usdPrice>0){
+   const candidate=price/usdPrice;
+   if(candidate>100&&candidate<10000){
+    if(!fxCandidates.has(day))fxCandidates.set(day,[]);
+    fxCandidates.get(day).push(candidate);
+   }
+  }
+  if(!byTicker.has(ticker))byTicker.set(ticker,new Map());
+  byTicker.get(ticker).set(day,{ticker,day,currency,price});
+ }
+ const fx=new Map();
+ for(const [day,values] of fxCandidates){
+  if(values.length<3)continue;
+  values.sort((a,b)=>a-b);fx.set(day,values[Math.floor(values.length/2)]);
+ }
+ const ranked=[];
+ for(const [ticker,map] of byTicker){
+  const p=portfolio.find(x=>String(x.Ticker||'').trim().toUpperCase()===ticker);
+  const typ=String(p?.Tipo||'').toLowerCase();
+  // A future balance is not a unit contract quote. Do not invent its performance.
+  if(typ==='derivado')continue;
+  const crypto=typ==='cripto';
+  const observations=[...map.values()].map(o=>{
+   const ars=o.currency==='ARS'&&o.price>0?o.price:(crypto&&o.currency==='USD'&&o.price>0&&fx.has(o.day)?o.price*fx.get(o.day):null);
+   return {...o,ars};
+  }).filter(o=>o.ars>0).sort((a,b)=>a.day.localeCompare(b.day));
+  if(observations.length<2)continue;
+  const last=observations[observations.length-1],before=observations[observations.length-2];
+  if(last.currency!==before.currency)continue;
+  const monthEnd=observations.filter(o=>o.day.slice(0,7)<last.day.slice(0,7)).at(-1);
+  const daily=last.ars/before.ars-1;
+  const monthly=monthEnd&&monthEnd.currency===last.currency?last.ars/monthEnd.ars-1:null;
+  if(!Number.isFinite(daily))continue;
+  ranked.push({ticker,price:last.ars,daily,monthly,date:last.day,previous:before.day,monthEnd:monthEnd?.day||null});
+ }
+ return ranked;
+}
+function renderMovers(){
+ const ranked=calculateMovers(historicalQuotes,positions);
+ const lastDate=ranked.reduce((d,x)=>x.date>d?x.date:d,'');
+ const eligible=ranked.filter(x=>x.date===lastDate);
+ for(const [id,rows] of [
+  ['topRises',eligible.filter(x=>x.daily>0).sort((a,b)=>b.daily-a.daily).slice(0,10)],
+  ['topFalls',eligible.filter(x=>x.daily<0).sort((a,b)=>a.daily-b.daily).slice(0,10)]
+ ]){
+  const el=document.getElementById(id);if(!el)continue;
+  const head='<div class="mover-row mover-head"><b>Activo</b><b>Cotización</b><b>Diaria</b><b>Mes</b></div>';
+  const body=rows.map(x=>{
+   const css=n=>n===null?'flat':n>0?'up':n<0?'down':'flat';
+   return '<div class="mover-row" title="Cierre '+escapeMover(x.date)+'; previo '+escapeMover(x.previous)+'; base mensual '+escapeMover(x.monthEnd||'no disponible')+'"><strong>'+escapeMover(x.ticker)+'</strong><span>ARS '+priceMover(x.price)+'</span><span class="'+css(x.daily)+'">'+pctMover(x.daily)+'</span><span class="'+css(x.monthly)+'">'+pctMover(x.monthly)+'</span></div>';
+  }).join('');
+  const fallback=historicalError?'Historial no disponible: '+escapeMover(historicalError):'Sin dos cierres válidos comparables.';
+  const info=lastDate?'Cierre histórico: '+dateFmt(lastDate)+'. No es cotización en tiempo real. Cripto: conversión por CCL implícito histórico. Futuros y activos sin precio unitario verificable excluidos.':'No hay historial de cierres comparable.';
+  el.innerHTML=head+(body||'<div class="empty">'+fallback+'</div>')+'<div class="sub" style="margin-top:10px">'+info+'</div>';
+ }
+}
 function renderTop15(arr,total){const el=document.getElementById('top15List');if(!el)return;el.innerHTML=arr.map(r=>{const q=quoteInfo(r);return `<div class="topasset"><div class="topasset-left"><div class="topasset-t">${r.Ticker}</div><div class="topasset-n">${r.Nombre||''}</div><div class="topasset-w">${pct(total?r.value/total:0)} de la cartera</div></div><div class="topasset-right"><div class="topasset-q ${q.dir}">${q.text||'—'}</div><div class="topasset-chg">${changeHtml(r.chg)}</div></div></div>`}).join('')||'<div class="empty">Sin datos</div>'}
 function renderFilters(){const vals=['Todos','Acción AR','Cedear','ETF','Bono AR','Cripto','Cash'];const el=document.getElementById('filterChips');el.innerHTML=vals.map(v=>`<button class="chip ${filterType===v?'active':''}" data-filter="${v}">${v}</button>`).join('');el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filterType=b.dataset.filter;renderFilters();renderPositions()})}
 function renderPositions(){const q=(document.getElementById('search').value||'').trim().toLowerCase();let arr=positions.filter(r=>(filterType==='Todos'||r.Tipo===filterType||(filterType==='Cripto'&&(r.Tipo==='Cripto'||r.Tipo==='Derivado')))&&(!q||r.Ticker.toLowerCase().includes(q)||String(r.Nombre).toLowerCase().includes(q))).sort((a,b)=>b.value-a.value);document.getElementById('posCount').textContent=`${arr.length} posiciones`;document.getElementById('posList').innerHTML=arr.map(r=>{const qi=quoteInfo(r);const local=qi.text?`<span class="plocal ${qi.dir}">${qi.text}</span>`:'';return `<div class="pos"><div class="pos-top"><div style="min-width:0"><div class="ticker">${r.Ticker}</div><div class="pname">${r.Nombre}</div></div><div><div class="pusd">${usd(r.value)}</div><div class="pchg">${local}${changeHtml(r.chg)}</div></div></div><div class="pmeta"><span class="badge">${pct(r.weight)}</span><span class="badge">${r.Tipo}</span><span class="badge">${r.Región||''}</span><span class="badge ${String(r['Estado dato']).includes('DESACTUALIZADO')?'warn':''}">${r['Estado dato']||''}</span></div></div>`}).join('')||'<div class="empty">Sin resultados</div>'}
@@ -199,9 +284,9 @@ function renderMonthlyTypes(){
 async function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
 function saveCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}))}catch(e){}}
 function loadCache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(e){return null}}
-async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60']];const texts=await Promise.all(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>data[x[0]]=x[0]==='exposure'?parseExposure(texts[i]):table(texts[i]));applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
+async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];const texts=await Promise.allSettled(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
 function parseExposure(csv){const a=parseCSV(csv),out=[];for(let i=1;i<a.length;i++){const r=a[i]||[];if(r[0]||r[4])out.push({Región:r[0]||'',regionValue:num(r[1]),Sector:r[4]||'',sectorValue:num(r[5])})}return out}
-function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[];monthlyTypeHistory=d.monthlyTypes||[]}
+function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[];monthlyTypeHistory=d.monthlyTypes||[];historicalQuotes=d.historicalQuotes||[];historicalError=d.historicalError||''}
 document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});load();
 
 // Funciones de voz: resumen determinista, asesor a través de endpoint seguro.
