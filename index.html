@@ -86,6 +86,8 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 <section class="page" id="page-evolucion">
  <div class="card"><h2>Evolución patrimonial</h2><div class="sub">Cierres observados, sin completar meses faltantes. Elegí «Mes» para ver los últimos registros disponibles de cada mes. Cambios patrimoniales ≠ rentabilidad.</div><div class="periods" id="periods"></div><div class="periods" id="chartModes"><button class="period active" data-chart="line">Curva</button><button class="period" data-chart="bars">Barras</button></div><svg class="spark" id="spark"></svg><div class="histlist" id="histText"></div></div>
  <div class="card"><h2>Patrimonio mensual por tipo</h2><div class="sub">Miles de USD. Cripto, ETF, CEDEAR, Bonos y Acciones; solo cierres registrados.</div><h3>Curvas mensuales</h3><div id="typeLines"></div><h3>Barras apiladas</h3><div id="typeBars"></div><div class="sub" id="typeNote"></div></div>
+ <div class="card"><h2>Top 10 subas</h2><div class="sub">Orden por variación diaria positiva. El acumulado mensual no modifica el ranking.</div><div id="topRises"></div></div>
+ <div class="card"><h2>Top 10 bajas</h2><div class="sub">Orden por variación diaria negativa, desde la mayor caída.</div><div id="topFalls"></div></div>
  <div class="card"><h2>Top 15 activos</h2><div class="sub">Principales posiciones: cotización y variación contra la última referencia.</div><div id="top15List"></div></div>
 </section>
 <section class="page" id="page-posiciones">
@@ -138,7 +140,7 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
  const topNow=positions.slice().sort((a,b)=>b.value-a.value);
  bars('topBars',topNow.slice(0,5).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});
  const reg=[],sec=[];exposure.forEach(r=>{if(r.Región&&num(r.regionValue)>0)reg.push({name:r.Región,value:num(r.regionValue)});if(r.Sector&&num(r.sectorValue)>0)sec.push({name:r.Sector,value:num(r.sectorValue)})});
- bars('regionBars',reg,total,{scale:50});bars('sectorBars',sec,total,{scale:30});bars('etfBars',positions.filter(r=>r.Tipo==='ETF').sort((a,b)=>b.value-a.value).slice(0,10).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});bars('custBars',custSummary.map(r=>({name:r.Custodio,value:r.value})),total,{scale:40,clickable:true});renderSnapshots();renderTop15(topNow.slice(0,15),total);renderFilters();renderPositions();renderBanner();
+ bars('regionBars',reg,total,{scale:50});bars('sectorBars',sec,total,{scale:30});bars('etfBars',positions.filter(r=>r.Tipo==='ETF').sort((a,b)=>b.value-a.value).slice(0,10).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});bars('custBars',custSummary.map(r=>({name:r.Custodio,value:r.value})),total,{scale:40,clickable:true});renderSnapshots();renderTop15(topNow.slice(0,15),total);renderMovers();renderFilters();renderPositions();renderBanner();
  const dates=positions.map(x=>x['Fecha dato']).filter(Boolean).sort();document.getElementById('asof').textContent=dates.length?`Última actualización de mercado: ${dateFmt(dates[dates.length-1])}`:'Datos cargados';
 }
 function renderBanner(){const msgs=bannerRows.filter(r=>['ALERTA','REVISAR','ATENCIÓN'].includes(String(r.Estado||'').toUpperCase())).map(r=>r.Mensaje).filter(Boolean);const el=document.getElementById('banner');if(msgs.length){el.textContent=msgs.join(' · ');el.classList.remove('hidden')}else el.classList.add('hidden')}
@@ -157,6 +159,29 @@ if(id==='spark'&&monthlyChartMode==='bars'){
 }}
 document.getElementById('chartModes').querySelectorAll('button').forEach(b=>b.onclick=()=>{monthlyChartMode=b.dataset.chart;document.querySelectorAll('#chartModes button').forEach(x=>x.classList.toggle('active',x===b));renderSnapshots()});
 function quoteInfo(r){const dir=r.chg>0?'up':r.chg<0?'down':'flat';const state=String(r['Estado dato']||'').toUpperCase();const isCurrent=state==='ACTUALIZADO';const ref=num(r['Valor ref USD']);const qty=num(r.Cantidad);const isCrypto=r.Tipo==='Cripto';const isFut=r.Ticker==='FUT'||r.Tipo==='Derivado';let text='';if(isCrypto&&qty>0){text=`${isCurrent?'':'Últ. '}${usdQuote(r.value/qty)}`}else if(isFut){const qUsd=qty>0?(ref||r.value)/qty:(ref||r.value);if(qUsd>0)text=`Últ. ${usdQuote(qUsd)}`}else if(r.localCurrency==='ARS'&&r.localPrice>0){text=`${isCurrent?'':'Últ. '}${ars(r.localPrice)}`}else if(r.Ticker==='CASH'&&ref>0){text=`Últ. ${usdQuote(ref)}`}return{text,dir}}
+// El feed actual no garantiza que "Variación %" sea diaria, ni trae siempre
+// un cierre comparable del mes anterior. No se usa como sustituto.
+const explicitPct=(row,keys)=>{for(const k of keys){const raw=row[k];if(raw===undefined||raw===null||String(raw).trim()==='')continue;const n=frac(raw);if(Number.isFinite(n))return n;}return null;};
+const quotePrice=(row)=>{if(!(row.localPrice>0)||!row.localCurrency)return '—';return row.localCurrency.toUpperCase()+' '+new Intl.NumberFormat('es-AR',{maximumFractionDigits:4}).format(row.localPrice)};
+function renderMovers(){
+ const unique=new Map();
+ positions.forEach(row=>{const ticker=String(row.Ticker||'').trim().toUpperCase();if(!ticker)return;
+  const daily=explicitPct(row,['Variación diaria %','Variacion diaria %']);
+  const monthly=explicitPct(row,['Variación mensual %','Variacion mensual %','Acumulado mensual %']);
+  const status=String(row['Estado dato']||'').toUpperCase();
+  if(!unique.has(ticker))unique.set(ticker,{...row,daily,monthly,stale:status!=='ACTUALIZADO'});
+ });
+ const all=[...unique.values()].filter(r=>r.daily!==null&&!r.stale&&r.localPrice>0&&r.localCurrency);
+ const fmt=n=>n===null?'Sin datos':(n>0?'+':'')+new Intl.NumberFormat('es-AR',{style:'percent',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+ const cell=n=>'<span class="'+(n===null?'flat':n>0?'up':n<0?'down':'flat')+'">'+fmt(n)+'</span>';
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ for(const [id,items] of [['topRises',all.filter(x=>x.daily>0).sort((a,b)=>b.daily-a.daily).slice(0,10)],['topFalls',all.filter(x=>x.daily<0).sort((a,b)=>a.daily-b.daily).slice(0,10)]]){
+  const el=document.getElementById(id);if(!el)continue;
+  const head='<div style="display:grid;grid-template-columns:1.1fr 1fr .85fr .85fr;gap:6px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--line);padding:8px 0"><b>Activo</b><b>Cotización</b><b>Diaria</b><b>Mes</b></div>';
+  const rows=items.map(r=>'<div style="display:grid;grid-template-columns:1.1fr 1fr .85fr .85fr;gap:6px;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px;align-items:center"><strong>'+esc(r.Ticker)+'</strong><span>'+esc(quotePrice(r))+'</span>'+cell(r.daily)+cell(r.monthly)+'</div>').join('');
+  el.innerHTML=head+(rows||'<div class="empty">Sin cotizaciones diarias verificadas. Se requiere cierre previo y referencia mensual.</div>');
+ }
+}
 function renderTop15(arr,total){const el=document.getElementById('top15List');if(!el)return;el.innerHTML=arr.map(r=>{const q=quoteInfo(r);return `<div class="topasset"><div class="topasset-left"><div class="topasset-t">${r.Ticker}</div><div class="topasset-n">${r.Nombre||''}</div><div class="topasset-w">${pct(total?r.value/total:0)} de la cartera</div></div><div class="topasset-right"><div class="topasset-q ${q.dir}">${q.text||'—'}</div><div class="topasset-chg">${changeHtml(r.chg)}</div></div></div>`}).join('')||'<div class="empty">Sin datos</div>'}
 function renderFilters(){const vals=['Todos','Acción AR','Cedear','ETF','Bono AR','Cripto','Cash'];const el=document.getElementById('filterChips');el.innerHTML=vals.map(v=>`<button class="chip ${filterType===v?'active':''}" data-filter="${v}">${v}</button>`).join('');el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filterType=b.dataset.filter;renderFilters();renderPositions()})}
 function renderPositions(){const q=(document.getElementById('search').value||'').trim().toLowerCase();let arr=positions.filter(r=>(filterType==='Todos'||r.Tipo===filterType||(filterType==='Cripto'&&(r.Tipo==='Cripto'||r.Tipo==='Derivado')))&&(!q||r.Ticker.toLowerCase().includes(q)||String(r.Nombre).toLowerCase().includes(q))).sort((a,b)=>b.value-a.value);document.getElementById('posCount').textContent=`${arr.length} posiciones`;document.getElementById('posList').innerHTML=arr.map(r=>{const qi=quoteInfo(r);const local=qi.text?`<span class="plocal ${qi.dir}">${qi.text}</span>`:'';return `<div class="pos"><div class="pos-top"><div style="min-width:0"><div class="ticker">${r.Ticker}</div><div class="pname">${r.Nombre}</div></div><div><div class="pusd">${usd(r.value)}</div><div class="pchg">${local}${changeHtml(r.chg)}</div></div></div><div class="pmeta"><span class="badge">${pct(r.weight)}</span><span class="badge">${r.Tipo}</span><span class="badge">${r.Región||''}</span><span class="badge ${String(r['Estado dato']).includes('DESACTUALIZADO')?'warn':''}">${r['Estado dato']||''}</span></div></div>`}).join('')||'<div class="empty">Sin resultados</div>'}
