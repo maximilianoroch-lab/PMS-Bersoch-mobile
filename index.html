@@ -71,7 +71,7 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 </div>
 <div class="kpis" id="homeKpis"></div>
  <div class="grid2">
-  <div class="card"><h2>Tipo</h2><div class="sub">Composición de la cartera. FUT se integra a Crypto.</div><div class="barlist" id="typeBars"></div></div>
+  <div class="card"><h2>Tipo</h2><div class="sub">Composición de la cartera. FUT se integra a Crypto.</div><div class="barlist" id="monthlyTypeBars"></div></div>
   <div class="card"><h2>Top 5 posiciones</h2><div class="sub">Concentración por ticker.</div><div class="barlist" id="topBars"></div></div>
  </div>
  <div class="section-title">Evolución</div>
@@ -126,7 +126,7 @@ const usdQuote=n=>{const v=Number(n)||0;if(v>0&&v<1)return'< US$ 1';return`US$ $
 function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3],12);m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return new Date(+m[3],+m[2]-1,+m[1],12);const d=new Date(s);return Number.isNaN(d.getTime())?null:d}
 function dateFmt(v){const d=parseDate(v);return d?new Intl.DateTimeFormat('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(d):String(v||'')}
 function changeHtml(v){if(v===null||v===undefined||v===''||!Number.isFinite(Number(v)))return'';const n=Number(v);const cls=n>0?'up':n<0?'down':'flat',arrow=n>0?'▲':n<0?'▼':'→';return`<span class="change ${cls}">${arrow} ${n>=0?'+':''}${(n*100).toFixed(1)}%</span>`}
-function bars(elId,entries,total,opt={}){const el=document.getElementById(elId);if(!entries.length){el.innerHTML='<div class="empty">Sin datos</div>';return}const max=opt.scale||Math.max(...entries.map(x=>x.value/total*100),1);el.innerHTML=entries.map(x=>{const share=total?x.value/total:0,w=Math.min(100,(share*100/max)*100);return`<div class="baritem ${opt.clickable?'clickable':''}" ${opt.clickable?`data-key="${String(x.name).replace(/"/g,'&quot;')}"`:''}><div class="barhead"><span class="barname">${x.name}</span><span class="barval">${pct(share)} · ${usd(x.value)} ${changeHtml(x.change)}</span></div><div class="track"><div class="fill" style="width:${w}%"></div></div></div>`}).join('');if(opt.clickable)el.querySelectorAll('.baritem').forEach(n=>n.onclick=()=>openCustodian(n.dataset.key))}
+function bars(elId,entries,total,opt={}){const el=document.getElementById(elId);if(!entries.length){el.innerHTML='<div class="empty">Sin datos</div>';return}const max=opt.scale||Math.max(...entries.map(x=>x.value/total*100),1);el.innerHTML=entries.map(x=>{const share=total?x.value/total:0,w=Math.min(100,(share*100/max)*100);return`<div class="baritem ${opt.clickable?'clickable':''}" ${opt.clickable?`data-key="${String(x.name).replace(/"/g,'&quot;')}"`:''}><div class="barhead"><span class="barname">${x.name}</span><span class="barval">${pct(share)} · ${usd(x.value)} ${changeHtml(x.change)}</span></div><div class="track"><div class="fill" style="width:${w}%;background:${opt.typeColors?(TYPE_COLORS[x.name]||"#598eb8"):"var(--blue)"}"></div></div></div>`}).join('');if(opt.clickable)el.querySelectorAll('.baritem').forEach(n=>n.onclick=()=>openCustodian(n.dataset.key))}
 let dataNormalized=false;
 function normalize(){if(dataNormalized)return;dataNormalized=true;positions=positions.filter(x=>x.Ticker).map(x=>({...x,value:num(x['Valor USD']),weight:frac(x.Peso),chg:frac(x['Variación %']),localPrice:num(x['Cotización local']),localCurrency:String(x['Moneda cotización']||'')}));typeRows=typeRows.filter(x=>x.Tipo&&x.Tipo!=='Total').map(x=>({...x,value:num(x['Valor USD'])}));custSummary=custSummary.filter(x=>x.Custodio).map(x=>({...x,value:num(x['Valor USD']),weight:frac(x['Peso cartera'])}));custDetail=custDetail.filter(x=>x.Custodio&&x.Ticker).map(x=>({...x,value:num(x['Valor USD']),custWeight:frac(x['Peso custodio']),portWeight:frac(x['Peso cartera'])}));snapshots=snapshots.filter(x=>x.Fecha&&num(x['Valor total USD'])>0).map(x=>({date:x.Fecha,value:num(x['Valor total USD']),source:x.Fuente||''}));homeRows=homeRows.filter(x=>x['HOME APP V2']||x['Patrimonio sin Crypto']||x.Valor)}
 function homeMap(){const m={};homeRows.forEach(r=>{const k=r['HOME APP V2']||r[Object.keys(r)[0]];if(k){const isPct=String(r.Valor||'').includes('%')||/%$/.test(k);m[k]={value:isPct?frac(r.Valor):num(r.Valor),ref:String(r['Ref.']||'').includes('%')?frac(r['Ref.']):num(r['Ref.']),chg:frac(r['Variación']),dir:r['Dir.']||'',status:r.Estado||''}}});return m}
@@ -137,7 +137,7 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
  document.getElementById('homeKpis').innerHTML=cards.map((x,i)=>{if(i===0){const [amount,share]=x[1].split('|');return `<div class="kpi crypto-kpi"><div class="lab">${x[0]}</div><div class="val">${amount} <span class="crypto-share">· ${share}</span> ${changeHtml(x[2])}</div><div class="note">${x[3]}</div></div>`}return `<div class="kpi"><div class="lab">${x[0]}</div><div class="val">${x[1]} ${changeHtml(x[2])}</div><div class="note">${x[3]}</div></div>`}).join('');
  const typeRef={};positions.forEach(r=>{const t=r.Tipo==='Derivado'?'Cripto':r.Tipo;typeRef[t]=(typeRef[t]||0)+num(r['Valor ref USD'])});
  const typeEntries=typeRows.filter(r=>!["CASH","EFECTIVO"].includes(String(r.Tipo||"").trim().toUpperCase())).map(r=>({name:r.Tipo,value:r.value,change:typeRef[r.Tipo]?r.value/typeRef[r.Tipo]-1:null})).sort((a,b)=>b.value-a.value);
- bars('typeBars',typeEntries,total,{scale:30});
+ bars('typeBars',typeEntries,total,{scale:30,typeColors:true});
  const topNow=positions.slice().sort((a,b)=>b.value-a.value);
  bars('topBars',topNow.slice(0,5).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});
  const reg=[],sec=[];exposure.forEach(r=>{if(r.Región&&num(r.regionValue)>0)reg.push({name:r.Región,value:num(r.regionValue)});if(r.Sector&&num(r.sectorValue)>0)sec.push({name:r.Sector,value:num(r.sectorValue)})});
@@ -255,6 +255,10 @@ document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySel
 const MONTH_TYPES=['Cripto','ETF','Cedear','Bono AR','Acción AR'];
 const MONTH_COLORS=['#d71920','#ffc000','#80c342','#4472c4','#8c8c8c'];
 const MONTH_NAMES=['Cripto','ETF','CEDEAR','Bonos','Acciones'];
+const TYPE_COLORS={'Cripto':'#d71920','Crypto':'#d71920','Derivado':'#d71920',
+  'ETF':'#ffc000','Cedear':'#80c342','CEDEAR':'#80c342',
+  'Bono AR':'#4472c4','Bonos':'#4472c4','Soberanos':'#4472c4',
+  'Acción AR':'#8c8c8c','Acciones':'#8c8c8c'};
 function monthlySeries(rows){
  return (rows||[]).map(r=>{
    const mes=String(r.Mes||'');
@@ -264,23 +268,33 @@ function monthlySeries(rows){
  .sort((a,b)=>a.mes.localeCompare(b.mes));
 }
 function renderMonthlyTypes(){
- const lines=document.getElementById('typeLines'),bars=document.getElementById('typeBars'),note=document.getElementById('typeNote');
+ const lines=document.getElementById('typeLines'),bars=document.getElementById('monthlyTypeBars'),note=document.getElementById('typeNote');
  if(!lines||!bars)return;
  const pts=monthlySeries(monthlyTypeHistory);
  const legend='<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;margin:6px 0 14px">'+MONTH_NAMES.map((n,i)=>'<span style="color:'+MONTH_COLORS[i]+'">● '+n+'</span>').join('')+'</div>';
- if(pts.length<2){lines.innerHTML='<div class="empty">Evolución histórica pendiente</div>';bars.innerHTML='<div class="empty">Se necesitan al menos dos cierres mensuales completos.</div>';note.textContent='Los valores disponibles de octubre de 2026 no permiten mostrar la serie desde enero de 2024. No se inventan cierres.';return;}
- const W=Math.max(600,pts.length*24),H=205,l=45,r=12,t=14,b=32;
- const total=p=>p.vals.reduce((a,b)=>a+b,0),max=Math.max(1,...pts.map(total))*1.08;
- const x=i=>l+(W-l-r)*(i+.5)/pts.length, y=v=>H-b-(H-t-b)*v/max;
- const labels=pts.map((p,i)=>i%3===0||i===pts.length-1?'<text x="'+x(i)+'" y="'+(H-7)+'" fill="#9eb5cb" font-size="10" text-anchor="middle">'+p.mes.slice(2)+'</text>':'').join('');
- const grid=[0,.25,.5,.75,1].map(v=>'<line x1="'+l+'" x2="'+(W-r)+'" y1="'+y(max*v)+'" y2="'+y(max*v)+'" stroke="#32455b"/><text x="'+(l-4)+'" y="'+(y(max*v)+3)+'" fill="#9eb5cb" text-anchor="end" font-size="9">'+(max*v).toFixed(0)+'</text>').join('');
- const annual=pts.map((p,i)=>p.mes.endsWith('-12')?'<line x1="'+(x(i)+(W-l-r)/pts.length*.5)+'" x2="'+(x(i)+(W-l-r)/pts.length*.5)+'" y1="'+t+'" y2="'+(H-b)+'" stroke="#eeeeee" stroke-width="1.5" stroke-dasharray="4 5"/>':'').join('');
- const svg=(content)=>'<div style="background:#000;border-radius:8px;padding:8px"><div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+W+'px;max-width:none;height:auto;background:#000" role="img" aria-label="Evolución mensual en miles de dólares">'+grid+content+annual+labels+'</svg></div>'+legend+'</div>';
- if(pts.length<2)lines.innerHTML='<div class="empty">La curva requiere al menos dos cierres mensuales.</div>';
- else lines.innerHTML=svg(MONTH_TYPES.map((_,k)=>'<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="2.5" points="'+pts.map((p,i)=>x(i)+','+y(p.vals[k])).join(' ')+'"/>').join(''));
- const width=Math.min(27,(W-l-r)/pts.length*.68);
- bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return [0,3,4,1,2].map(k=>{const v=p.vals[k],next=from+v;const rect='<rect x="'+(x(i)-width/2)+'" y="'+y(next)+'" width="'+width+'" height="'+Math.max(0,y(from)-y(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''));
- note.textContent=pts.length+' meses, en miles de USD. Histórico previo a snapshots: estimación; desde snapshots: observado. No es rentabilidad.';
+ if(pts.length<2){lines.innerHTML='<div class="empty">Evolución histórica pendiente</div>';bars.innerHTML='<div class="empty">Se necesitan dos cierres mensuales completos.</div>';note.textContent='Sin cierres suficientes; no se inventan precios.';return;}
+ const W=Math.max(620,pts.length*24),H=240,l=48,r=14,t=16,b=35;
+ const X=i=>l+(W-l-r)*(i+.5)/pts.length;
+ const labels=pts.map((p,i)=>i%3===0||i===pts.length-1?'<text x="'+X(i)+'" y="'+(H-7)+'" fill="#9eb5cb" font-size="10" text-anchor="middle">'+p.mes.slice(2)+'</text>':'').join('');
+ const annual=pts.map((p,i)=>p.mes.endsWith('-12')?'<line x1="'+X(i)+'" x2="'+X(i)+'" y1="'+t+'" y2="'+(H-b)+'" stroke="#aaaaaa" stroke-dasharray="3 5"/>':'').join('');
+ function svg(content,max,aria){
+  const Y=v=>H-b-(H-t-b)*v/max;
+  const grid=[0,.25,.5,.75,1].map(q=>'<line x1="'+l+'" x2="'+(W-r)+'" y1="'+Y(max*q)+'" y2="'+Y(max*q)+'" stroke="#32455b"/><text x="'+(l-5)+'" y="'+(Y(max*q)+3)+'" fill="#aebed0" text-anchor="end" font-size="10">'+Math.round(max*q)+'</text>').join('');
+  return '<div style="background:#000;border-radius:8px;padding:8px"><div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+W+'px;max-width:none;height:auto;background:#000" role="img" aria-label="'+aria+'">'+grid+content+annual+labels+'</svg></div>'+legend+'</div>';
+ }
+ const maxCurve=90; // miles USD, escala fija acordada para PMS Bersoch
+ const Ycurve=v=>H-b-(H-t-b)*v/maxCurve;
+ const linesSvg=MONTH_TYPES.map((_,k)=>{
+  // Clips excepcionales: mantener 0–90 mil sin dibujar fuera del gráfico.
+  const valid=pts.every(p=>p.vals[k]<=maxCurve);
+  const points=pts.map((p,i)=>X(i)+','+Ycurve(Math.min(maxCurve,p.vals[k]))).join(' ');
+  return '<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="'+points+'"><title>'+MONTH_NAMES[k]+(valid?'':' (supera escala)')+'</title></polyline>';
+ }).join('');
+ lines.innerHTML=svg(linesSvg,maxCurve,'Cinco curvas de patrimonio en miles de dólares, escala de cero a noventa');
+ const maxStack=Math.max(1,...pts.map(p=>p.vals.reduce((x,y)=>x+y,0)))*1.06;
+ const Ybars=v=>H-b-(H-t-b)*v/maxStack, width=Math.min(27,(W-l-r)/pts.length*.68);
+ bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return [0,3,4,1,2].map(k=>{const v=p.vals[k],next=from+v;const rect='<rect x="'+(X(i)-width/2)+'" y="'+Ybars(next)+'" width="'+width+'" height="'+Math.max(0,Ybars(from)-Ybars(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''),maxStack,'Composición mensual apilada en miles de dólares');
+ note.textContent=pts.length+' meses · Curvas: 0–90 mil USD por grupo; barras: escala total dinámica. Histórico preliminar anterior a snapshots; no es rentabilidad.';
 }
 async function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
 function saveCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}))}catch(e){}}
