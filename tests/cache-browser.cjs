@@ -19,6 +19,8 @@ const assert=require('node:assert/strict');
    try{validateBersochBundle(repeated);results.duplicateRejected=false}catch(e){results.duplicateRejected=true}
    const missing={...bundle,positions:[{Ticker:'AAPL','Valor USD':''}]};
    try{validateBersochBundle(missing);results.missingRejected=false}catch(e){results.missingRejected=true}
+   const garbage={...bundle,positions:[{Ticker:'AAPL','Valor USD':'n/d'}]};
+   try{validateBersochBundle(garbage);results.garbageRejected=false}catch(e){results.garbageRejected=true}
    const noHome={...bundle,home:[]};
    try{validateBersochBundle(noHome);results.emptyHomeRejected=false}catch(e){results.emptyHomeRejected=true}
    return results;
@@ -28,6 +30,7 @@ const assert=require('node:assert/strict');
   assert.equal(out.duplicateRejected,true);
   assert.equal(out.missingRejected,true);
   assert.equal(out.emptyHomeRejected,true);
+  assert.equal(out.garbageRejected,true);
   console.log('PASS: cached Bersoch data is validated, missing or duplicate instruments rejected');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});
