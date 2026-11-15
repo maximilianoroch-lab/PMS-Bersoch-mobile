@@ -297,9 +297,30 @@ function renderMonthlyTypes(){
  note.textContent=pts.length+' meses · Curvas: 0–90 mil USD por grupo; barras: escala total dinámica. Histórico preliminar anterior a snapshots; no es rentabilidad.';
 }
 async function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
-function saveCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}))}catch(e){}}
-function loadCache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(e){return null}}
-async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];const texts=await Promise.allSettled(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
+function validateBersochBundle(d){
+ if(!d||typeof d!=='object'||!Array.isArray(d.positions)||!Array.isArray(d.home)||!Array.isArray(d.types))throw Error('Lote incompleto');
+ if(!d.positions.length||!d.home.length||!d.types.length)throw Error('Datos esenciales vacíos');
+ const tickers=d.positions.map(r=>String(r.Ticker||'').trim().toUpperCase()).filter(Boolean);
+ if(tickers.length<1||tickers.length!==new Set(tickers).size)throw Error('Instrumentos vacíos o duplicados');
+ const valid=d.positions.filter(r=>String(r.Ticker||'').trim()).every(r=>{
+  const amount=num(r['Valor USD']);
+  return Number.isFinite(amount)&&amount>=0&&String(r['Valor USD']??'').trim()!=='';
+ });
+ if(!valid)throw Error('Faltan valuaciones verificables');
+ // Preserve all optional sections, never reconstruct history from current quotes.
+ return d;
+}
+function saveCache(data){try{
+ validateBersochBundle(data);
+ localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}));
+}catch(e){}}
+function loadCache(){try{
+ const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+ if(!c||!Number.isFinite(c.ts)||c.ts<=0||c.ts>Date.now()+60000)return null;
+ validateBersochBundle(c.data);
+ return c;
+}catch(e){return null}}
+async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];const texts=await Promise.allSettled(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});validateBersochBundle(data);applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
 function parseExposure(csv){const a=parseCSV(csv),out=[];for(let i=1;i<a.length;i++){const r=a[i]||[];if(r[0]||r[4])out.push({Región:r[0]||'',regionValue:num(r[1]),Sector:r[4]||'',sectorValue:num(r[5])})}return out}
 function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[];monthlyTypeHistory=d.monthlyTypes||[];historicalQuotes=d.historicalQuotes||[];historicalError=d.historicalError||''}
 document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});load();
