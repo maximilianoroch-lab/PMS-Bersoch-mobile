@@ -303,8 +303,11 @@ function validateBersochBundle(d){
  const tickers=d.positions.map(r=>String(r.Ticker||'').trim().toUpperCase()).filter(Boolean);
  if(tickers.length<1||tickers.length!==new Set(tickers).size)throw Error('Instrumentos vacíos o duplicados');
  const valid=d.positions.filter(r=>String(r.Ticker||'').trim()).every(r=>{
-  const amount=num(r['Valor USD']);
-  return Number.isFinite(amount)&&amount>=0&&String(r['Valor USD']??'').trim()!=='';
+  const raw=String(r['Valor USD']??'').trim();
+  const amount=num(raw);
+  // num() is tolerant and maps garbage to zero; never certify garbage as cash.
+  return /\d/.test(raw)&&!/[^0-9.,$\s+-]/.test(raw)&&
+    Number.isFinite(amount)&&amount>=0;
  });
  if(!valid)throw Error('Faltan valuaciones verificables');
  // Preserve all optional sections, never reconstruct history from current quotes.
