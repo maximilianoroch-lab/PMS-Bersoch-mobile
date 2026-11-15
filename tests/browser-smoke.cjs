@@ -8,6 +8,8 @@ const { chromium } = require('playwright');
   window.speechSynthesis.speak=()=>{};
  });
  await page.goto('file://'+process.cwd()+'/index.html',{waitUntil:'domcontentloaded'});
+ const compositionText=await page.locator('#page-diversificacion').innerText();
+ if(!compositionText.includes('Los fondos y GLD se muestran en ETF'))throw Error('GLD/ETF mobile classification copy is inconsistent');
  const brand=await page.locator('.brand').innerText();
  if(!brand.includes('PMS Bersoch'))throw Error('Product branding not visible');
  const desktop=page.locator('#advancedToolsLink a');
