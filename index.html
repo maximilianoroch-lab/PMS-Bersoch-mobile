@@ -306,8 +306,8 @@ function validateBersochBundle(d){
  if(!d||typeof d!=='object'||!Array.isArray(d.positions)||!Array.isArray(d.home)||!Array.isArray(d.types))throw Error('Lote incompleto');
  if(!d.positions.length||!d.home.length||!d.types.length)throw Error('Datos esenciales vacíos');
  const tickers=d.positions.map(r=>String(r.Ticker||'').trim().toUpperCase()).filter(Boolean);
- if(tickers.length<1||tickers.length!==new Set(tickers).size)throw Error('Instrumentos vacíos o duplicados');
- const valid=d.positions.filter(r=>String(r.Ticker||'').trim()).every(r=>{
+ if(tickers.length<1||tickers.length!==d.positions.length||tickers.length!==new Set(tickers).size)throw Error('Instrumentos vacíos o duplicados');
+ const valid=d.positions.every(r=>{
   const raw=String(r['Valor USD']??'').trim();
   const amount=num(raw);
   // num() is tolerant and maps garbage to zero; never certify garbage as cash.
