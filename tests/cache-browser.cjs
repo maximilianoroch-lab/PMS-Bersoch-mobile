@@ -17,6 +17,10 @@ const assert=require('node:assert/strict');
    results.badCache=loadCache();
    const repeated={...bundle,positions:[bundle.positions[0],bundle.positions[0]]};
    try{validateBersochBundle(repeated);results.duplicateRejected=false}catch(e){results.duplicateRejected=true}
+   const blankTicker={...bundle,positions:[...bundle.positions,{Ticker:'','Valor USD':'250'}]};
+   try{validateBersochBundle(blankTicker);results.tickerlessRejected=false}catch(e){results.tickerlessRejected=true}
+   localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data:blankTicker}));
+   results.tickerlessCache=loadCache();
    const missing={...bundle,positions:[{Ticker:'AAPL','Valor USD':''}]};
    try{validateBersochBundle(missing);results.missingRejected=false}catch(e){results.missingRejected=true}
    const garbage={...bundle,positions:[{Ticker:'AAPL','Valor USD':'n/d'}]};
@@ -28,6 +32,8 @@ const assert=require('node:assert/strict');
   assert.equal(out.restored,2);
   assert.equal(out.badCache,null);
   assert.equal(out.duplicateRejected,true);
+  assert.equal(out.tickerlessRejected,true);
+  assert.equal(out.tickerlessCache,null);
   assert.equal(out.missingRejected,true);
   assert.equal(out.emptyHomeRejected,true);
   assert.equal(out.garbageRejected,true);
