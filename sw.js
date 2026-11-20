@@ -1,5 +1,5 @@
-const CACHE='pms-bersoch-mobile-release-1';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='pms-bersoch-mobile-private-prepared-2';
+const ASSETS=['./','./index.html','./privacy-client.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
@@ -11,6 +11,6 @@ self.addEventListener('activate',e=>{
   })());
 });
 self.addEventListener('fetch',e=>{
-  if(e.request.url.includes('docs.google.com')) return;
+  if(e.request.method!=='GET'||e.request.url.includes('/.netlify/functions/')||e.request.url.includes('docs.google.com')||e.request.url.includes('accounts.google.com')) return;
   e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
 });

@@ -57,7 +57,16 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 @media(max-width:360px){.voice-button{padding:10px 6px;gap:6px}.voice-button img{width:34px;height:34px}.voice-button strong{font-size:11px}}
 </style>
 </head>
-<body>
+<body data-privacy-state="locked">
+<style>
+body[data-privacy-state="locked"] > :not(#privacyGate){visibility:hidden}
+#privacyGate{position:fixed;inset:0;z-index:9999;background:#07111f;color:#f4f7fb;padding:12vh 24px;text-align:center}
+body:not([data-privacy-state="locked"]) #privacyGate{display:none}
+#privateSignIn{display:flex;justify-content:center;margin-top:24px}
+#privateLogout{position:fixed;right:12px;top:60px;z-index:10000}
+</style>
+<section id="privacyGate" aria-label="Acceso a cartera personal"><h1>PMS Bersoch</h1><p id="privacyMessage">Verificando acceso…</p><div id="privateSignIn"></div></section>
+<button id="privateLogout" hidden type="button">Cerrar sesión</button>
 <div class="app">
 <header class="topbar"><div class="brandrow"><div><div class="brand">PMS Bersoch <span style="color:var(--muted);font-size:11px">Mobile</span></div><div class="asof" id="asof">Conectando…</div></div><button class="refresh" id="refreshBtn">Actualizar</button></div></header>
 <main>
@@ -114,6 +123,7 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
  <button class="navbtn" data-page="posiciones"><span class="ico">≡</span><span>Posiciones</span></button>
 </div></nav>
 <div class="sheet-overlay" id="custOverlay"><div class="bottomsheet" id="custSheet"><div class="handle"></div><div class="sheet-head"><div><div class="sheet-title" id="custTitle"></div><div class="sheet-total" id="custTotal"></div></div><button class="close" id="custClose">×</button></div><div class="accounts" id="custAccounts"></div><div id="custAssets"></div></div></div>
+<script src="./privacy-client.js"></script>
 <script>
 const SHEET_ID='18qu9LXo55qQZq4oEAq42u_DKaI7e9lZL_PkfUZiu0T0';
 const CACHE_KEY='pms-v2-monthly-black-annual-20261027';
@@ -301,7 +311,7 @@ function renderMonthlyTypes(){
  bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return [0,3,4,1,2].map(k=>{const v=p.vals[k],next=from+v;const rect='<rect x="'+(X(i)-width/2)+'" y="'+Ybars(next)+'" width="'+width+'" height="'+Math.max(0,Ybars(from)-Ybars(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''),maxStack,'Composición mensual apilada en miles de dólares');
  note.textContent=pts.length+' meses · Curvas: 0–90 mil USD por grupo; barras: escala total dinámica. Histórico preliminar anterior a snapshots; no es rentabilidad.';
 }
-async function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
+async function getCSV(sheet,range){if(PMSPrivacy.mode()!=='public')throw Error('Lectura pública bloqueada');const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
 function validateBersochBundle(d){
  if(!d||typeof d!=='object'||!Array.isArray(d.positions)||!Array.isArray(d.home)||!Array.isArray(d.types))throw Error('Lote incompleto');
  if(!d.positions.length||!d.home.length||!d.types.length)throw Error('Datos esenciales vacíos');
@@ -319,19 +329,21 @@ function validateBersochBundle(d){
  return d;
 }
 function saveCache(data){try{
+ if(PMSPrivacy.mode()!=='public')return;
  validateBersochBundle(data);
  localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}));
 }catch(e){}}
 function loadCache(){try{
+ if(PMSPrivacy.mode()!=='public')return null;
  const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
  if(!c||!Number.isFinite(c.ts)||c.ts<=0||c.ts>Date.now()+60000)return null;
  validateBersochBundle(c.data);
  return c;
 }catch(e){return null}}
-async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];const texts=await Promise.allSettled(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});validateBersochBundle(data);applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
+async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];if(!['public','private'].includes(PMSPrivacy.mode()))throw Error('Acceso no verificado');const privateTables=PMSPrivacy.mode()==='private'?await PMSPrivacy.tables():null;const texts=await Promise.allSettled(names.map(x=>privateTables?(typeof privateTables[x[0]]==='string'?Promise.resolve(privateTables[x[0]]):Promise.reject(Error('Falta sección privada'))):getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});validateBersochBundle(data);applyData(data);saveCache(data);render();PMSPrivacy.reveal()}catch(e){if(PMSPrivacy.mode()==='private')PMSPrivacy.lock('No se pudo cargar la cartera privada. Ingresá nuevamente.');const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
 function parseExposure(csv){const a=parseCSV(csv),out=[];for(let i=1;i<a.length;i++){const r=a[i]||[];if(r[0]||r[4])out.push({Región:r[0]||'',regionValue:num(r[1]),Sector:r[4]||'',sectorValue:num(r[5])})}return out}
 function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[];monthlyTypeHistory=d.monthlyTypes||[];historicalQuotes=d.historicalQuotes||[];historicalError=d.historicalError||''}
-document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});load();
+document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 // Funciones de voz: resumen determinista, asesor a través de endpoint seguro.
 const voiceDialog=document.getElementById('voiceDialog');
@@ -387,7 +399,7 @@ function openAdvisor(){openVoice('Asesor IA · cartera','advisor');chatHistory=[
  const form=document.createElement('form');form.className='voice-chat-entry';form.onsubmit=event=>{event.preventDefault();sendChat()};form.innerHTML='<input id="voiceChatInput" aria-label="Pregunta al Asesor IA" maxlength="550" placeholder="Preguntale al asesor…"><button class="voice-mini" type="submit">Enviar</button>';
  voiceControls.appendChild(form);actionButton('🎙 Dictar',recognition);actionButton('■ Detener voz',stopVoice)}
 async function sendChat(){const input=document.getElementById('voiceChatInput');const query=input.value.trim();if(!query||voiceBusy)return;input.value='';pushChat('user',query);voiceBusy=true;
- try{const d=portfolioVoiceContext();let accessCode=sessionStorage.getItem('pmsAdvisorCode')||'';if(!accessCode){accessCode=prompt('Código de acceso al Asesor IA (configurado en Netlify):')||'';if(!accessCode)throw Error('Hace falta el código de acceso.');sessionStorage.setItem('pmsAdvisorCode',accessCode)}const response=await fetch('/.netlify/functions/advisor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:query,portfolio:d,history:chatHistory.slice(-6),access_code:accessCode})});let parsed;try{parsed=await response.json()}catch{parsed={error:'No se encontró el servicio de IA. Se debe desplegar la función en Netlify y configurar su clave segura.'}};
+ try{const d=portfolioVoiceContext();let accessCode=sessionStorage.getItem('pmsAdvisorCode')||'';if(!accessCode){accessCode=prompt('Código de acceso al Asesor IA (configurado en Netlify):')||'';if(!accessCode)throw Error('Hace falta el código de acceso.');sessionStorage.setItem('pmsAdvisorCode',accessCode)}const response=await fetch('/.netlify/functions/advisor',{method:'POST',headers:{'Content-Type':'application/json',...PMSPrivacy.headers()},body:JSON.stringify({question:query,portfolio:d,history:chatHistory.slice(-6),access_code:accessCode})});let parsed;try{parsed=await response.json()}catch{parsed={error:'No se encontró el servicio de IA. Se debe desplegar la función en Netlify y configurar su clave segura.'}};
  if(!response.ok)throw Error(parsed.error||'No se pudo consultar al Asesor IA.');
  const answer=String(parsed.answer||'No recibí una respuesta.');pushChat('assistant',answer);chatHistory.push({role:'user',content:query},{role:'assistant',content:answer});speakVoice(answer);
  }catch(error){pushChat('assistant',`Asesor no disponible: ${error.message}. El resumen en voz sigue funcionando sin el servidor.`)}finally{voiceBusy=false}}
@@ -395,5 +407,7 @@ document.getElementById('voiceSummaryBtn').onclick=openSummary;
 document.getElementById('voiceAdvisorBtn').onclick=openAdvisor;
 document.getElementById('voiceClose').onclick=closeVoice;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&voiceDialog.classList.contains('open'))closeVoice()});
+PMSPrivacy.init({onReady:load,onLocked:()=>{applyData({});stopVoice();chatHistory=[];voiceText.textContent='';closeVoice();}});
+window.addEventListener('pagehide',()=>{if(PMSPrivacy.mode()==='private')PMSPrivacy.lock('Volvé a ingresar para ver la cartera.');});
 </script>
 </body></html>

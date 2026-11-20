@@ -2,12 +2,15 @@ const { chromium } = require('playwright');
 (async()=>{
  const browser=await chromium.launch({headless:true});
  const page=await browser.newPage();
+ await page.route('https://**/*', route=>route.abort('failed'));
  const errors=[];
  page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
   window.speechSynthesis.speak=()=>{};
  });
+ await page.addInitScript(()=>{const original=window.fetch;window.fetch=(url,options)=>String(url).includes('/.netlify/functions/auth-config')?Promise.resolve(new Response(JSON.stringify({mode:'public'}),{status:200,headers:{'Content-Type':'application/json'}})):original(url,options);});
  await page.goto('file://'+process.cwd()+'/index.html',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>window.PMSPrivacy?.mode()==='public');
  const compositionText=await page.locator('#page-diversificacion').innerText();
  if(!compositionText.includes('Los fondos y GLD se muestran en ETF'))throw Error('GLD/ETF mobile classification copy is inconsistent');
  const brand=await page.locator('.brand').innerText();
@@ -24,7 +27,7 @@ const { chromium } = require('playwright');
  await page.locator('#voiceClose').click();
  if(await page.locator('#voiceDialog.open').count())throw Error('Summary dialog did not close');
  if(await page.locator('#voiceAdvisorBtn').isVisible())throw Error('Unready advisor button is visible');
- const custodianLayout=await page.evaluate(()=>{const s=document.querySelector('script')?.textContent||'';return s.includes('grid-column:1/3')&&s.includes('x.Nombre')});
+ const custodianLayout=await page.evaluate(()=>{const s=document.querySelector('script:not([src])')?.textContent||'';return s.includes('grid-column:1/3')&&s.includes('x.Nombre')});
  if(!custodianLayout)throw Error('Custodian ticker/name layout is missing');
  if(errors.length)throw Error('Page JavaScript errors: '+errors.join('; '));
  await browser.close();

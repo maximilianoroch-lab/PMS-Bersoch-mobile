@@ -5,7 +5,9 @@ const assert=require('node:assert/strict');
  try{
   const page=await browser.newPage();
   await page.route('https://docs.google.com/**',route=>route.abort('failed'));
-  await page.goto('file://'+process.cwd()+'/index.html',{waitUntil:'domcontentloaded'});
+  await page.addInitScript(()=>{const original=window.fetch;window.fetch=(url,options)=>String(url).includes('/.netlify/functions/auth-config')?Promise.resolve(new Response(JSON.stringify({mode:'public'}),{status:200,headers:{'Content-Type':'application/json'}})):original(url,options);});
+ await page.goto('file://'+process.cwd()+'/index.html',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>window.PMSPrivacy?.mode()==='public');
   const out=await page.evaluate(()=>{
    const bundle={positions:[{Ticker:'AAPL','Valor USD':'100'},{Ticker:'MSFT','Valor USD':'200'}],home:[{'HOME APP V2':'Patrimonio total',Valor:'300'}],types:[{Tipo:'Cedear','Valor USD':'300'}]};
    validateBersochBundle(bundle);
