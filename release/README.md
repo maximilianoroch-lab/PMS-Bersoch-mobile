@@ -46,3 +46,9 @@ Values and command output stay out of logs/artifacts. Failure may leave newly ad
 record and review; rollback of deploy does not remove them. DEMO receives no reader JSON.
 No OPENAI_API_KEY is created or copied; enabling paid advisor calls requires its own setup
 and authorization. With absent advisor keys, keep unavailable UI truthful, not fake success.
+
+Read-only audit runs after tests only for same-repository PRs. It uses the supplied
+Netlify token for GET site/deploy metadata and, in PERSONAL only, Google readonly
+spreadsheet metadata to verify the reader. It never deploys, writes data or updates
+settings. Output contains only readiness, IDs/commits and worksheet count; no keys,
+values, holdings or metadata response bodies. Missing credentials block the audit.
