@@ -151,7 +151,7 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
  document.getElementById('homeKpis').innerHTML=cards.map((x,i)=>{if(i===0){const [amount,share]=x[1].split('|');return `<div class="kpi crypto-kpi"><div class="lab">${x[0]}</div><div class="val">${amount} <span class="crypto-share">· ${share}</span> ${changeHtml(x[2])}</div><div class="note">${x[3]}</div></div>`}return `<div class="kpi"><div class="lab">${x[0]}</div><div class="val">${x[1]} ${changeHtml(x[2])}</div><div class="note">${x[3]}</div></div>`}).join('');
  const typeRef={};positions.forEach(r=>{const t=r.Tipo==='Derivado'?'Cripto':r.Tipo;typeRef[t]=(typeRef[t]||0)+num(r['Valor ref USD'])});
  const typeEntries=typeRows.filter(r=>!["CASH","EFECTIVO"].includes(String(r.Tipo||"").trim().toUpperCase())).map(r=>({name:r.Tipo,value:r.value,change:typeRef[r.Tipo]?r.value/typeRef[r.Tipo]-1:null})).sort((a,b)=>b.value-a.value);
- bars('typeBars',typeEntries,total,{scale:30,typeColors:true});
+ // La composición temporal se dibuja como curvas por renderMonthlyTypes().
  const topNow=positions.slice().sort((a,b)=>b.value-a.value);
  bars('topBars',topNow.slice(0,5).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});
  const reg=[],sec=[];exposure.forEach(r=>{if(r.Región&&num(r.regionValue)>0)reg.push({name:r.Región,value:num(r.regionValue)});if(r.Sector&&num(r.sectorValue)>0)sec.push({name:r.Sector,value:num(r.sectorValue)})});
