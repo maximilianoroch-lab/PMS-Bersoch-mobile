@@ -64,6 +64,7 @@ jobs:
         env:
           NETLIFY_CLI: ${{ runner.temp }}/max-netlify-cli/node_modules/.bin/netlify
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          PMS_GOOGLE_SERVICE_ACCOUNT: ${{ secrets.PMS_GOOGLE_SERVICE_ACCOUNT }}
           RELEASE_APPROVAL: ${{ inputs.approval }}
           CREDITS_AVAILABLE: ${{ inputs.credits_available }}
           CREDITS_CHECKED_AT: ${{ inputs.credits_checked_at }}

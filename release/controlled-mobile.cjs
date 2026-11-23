@@ -13,6 +13,13 @@ function guard(input,site,now=Date.now()){
  if(site.prevent_non_git_prod_deploys===true)throw Error('La política del sitio bloquea publicación manual');
  if(site.published_deploy?.id!==POLICY.rollback)throw Error('Producción cambió; revisar respaldo y reversión');
 }
+function parseEnvValue(raw,name,optional=false){
+ let obj;try{obj=JSON.parse(raw)}catch{throw Error('Respuesta de variable inválida: '+name)}
+ if(!obj||Array.isArray(obj)||typeof obj!=='object')throw Error('Respuesta de variable inválida: '+name);
+ if(!Object.hasOwn(obj,name)){if(optional)return '';throw Error('Falta variable: '+name)}
+ if(typeof obj[name]!=='string'||!obj[name].trim())throw Error('Valor de variable inválido: '+name);
+ return obj[name].trim();
+}
 function prepare(){
  const expected=process.env.EXPECTED_SHA||'';
  const actual=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
@@ -31,7 +38,24 @@ async function publish(){
  const site=await response.json();
  const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
  guard({sha:process.env.EXPECTED_SHA,actualSha:sha,approval:process.env.RELEASE_APPROVAL,credits:process.env.CREDITS_AVAILABLE,checkedAt:process.env.CREDITS_CHECKED_AT,siteId},site);
- function envValue(name,optional=false){try{return execFileSync(cli,['env:get',name,'--site',siteId,'--context','production','--scope','functions'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30000}).trim()}catch{if(optional)return '';throw Error('Falta variable Functions: '+name)}}
+ function envValue(name,optional=false){
+  let raw;try{raw=execFileSync(cli,['env:get',name,'--site',siteId,'--context','production','--scope','functions','--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30000})}catch{throw Error('No se pudo verificar variable: '+name)}
+  return parseEnvValue(raw,name,optional);
+ }
+ if(POLICY.personal&&process.env.PMS_GOOGLE_SERVICE_ACCOUNT){
+  let info;try{info=JSON.parse(process.env.PMS_GOOGLE_SERVICE_ACCOUNT)}catch{throw Error('JSON lector inválido')}
+  const sid=fs.readFileSync('index.html','utf8').match(/const SHEET_ID='([^']+)'/);
+  if(!sid||info.client_email!==POLICY.reader||info.token_uri!=='https://oauth2.googleapis.com/token'||info.type!=='service_account'||!info.private_key)throw Error('JSON no corresponde al lector autorizado');
+  const desired={PMS_DATA_MODE:'private',PMS_GOOGLE_CLIENT_ID:POLICY.clientId,PMS_ALLOWED_EMAILS:'maximilianoroch@gmail.com',PMS_PERSONAL_SPREADSHEET_ID:sid[1],PMS_GOOGLE_SERVICE_ACCOUNT:JSON.stringify(info)};
+  for(const [key,value] of Object.entries(desired)){
+   const current=envValue(key,true);
+   if(current){
+    let same=current===value;
+    if(key==='PMS_GOOGLE_SERVICE_ACCOUNT'){try{const c=JSON.parse(current);same=c.client_email===info.client_email&&c.private_key===info.private_key&&c.token_uri===info.token_uri&&c.type===info.type}catch{same=false}}
+    if(!same)throw Error('Variable existente diferente: '+key+'; revisar sin sobrescribir');
+   }else{try{execFileSync(cli,['env:set',key,value,'--site',siteId,'--context','production','--scope','functions'],{stdio:['ignore','pipe','pipe'],timeout:30000})}catch{throw Error('No se confirmó variable: '+key+'; revisar sin publicar')}}
+  }
+ }
  if(POLICY.personal){
   if(envValue('PMS_DATA_MODE')!=='private'||envValue('PMS_GOOGLE_CLIENT_ID')!==POLICY.clientId)throw Error('Modo privado/cliente OAuth no verificado');
   if(!envValue('PMS_ALLOWED_EMAILS').split(',').map(x=>x.trim().toLowerCase()).includes('maximilianoroch@gmail.com'))throw Error('Cuenta Max no autorizada');
@@ -46,4 +70,4 @@ async function publish(){
  console.log('Publicación respondió; registrar ID y verificar contenido real antes de declarar instalación completa.');
 }
 if(require.main===module){(async()=>{if(process.argv[2]==='prepare')prepare();else if(process.argv[2]==='publish')await publish();else throw Error('Modo requerido: prepare o publish')})().catch(e=>{console.error(e.message);process.exitCode=1})}
-module.exports={guard,POLICY};
+module.exports={guard,POLICY,parseEnvValue};

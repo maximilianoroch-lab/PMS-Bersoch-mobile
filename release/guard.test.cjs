@@ -6,3 +6,8 @@ for(const [name,patch] of [['wrong SHA',{actualSha:'b'.repeat(40)}],['missing ap
 for(const [name,patch] of [['wrong site',{name:'other'}],['active builds',{build_settings:{stop_builds:false}}],['unknown builds',{build_settings:{}}],['changed production',{published_deploy:{id:'changed'}}],['manual deployment forbidden',{prevent_non_git_prod_deploys:true}]])test(name,()=>assert.throws(()=>guard(input,{...site,...patch},now)));
 
 test('accepts fixed Netlify domain instead of requiring a second secret',()=>assert.doesNotThrow(()=>guard({...input,siteId:p.site+'.netlify.app'},site,now)));
+
+const {parseEnvValue}=require('./controlled-mobile.cjs');
+test('only confirmed missing JSON value may be treated as optional',()=>{assert.equal(parseEnvValue('{}','KEY',true),'');assert.throws(()=>parseEnvValue('{}','KEY'));});
+test('API/CLI errors cannot be mistaken for absent config or leak response',()=>{for(const raw of ['SECRET_FIXTURE unauthorized','null','[]']){assert.throws(()=>parseEnvValue(raw,'KEY',true),e=>!e.message.includes('SECRET_FIXTURE'));}});
+test('resolved JSON values preserve actual secret internally without logging',()=>assert.equal(parseEnvValue('{"KEY":"synthetic"}','KEY'),'synthetic'));

@@ -37,3 +37,12 @@ Rollback IDs in policy.json correspond to downloaded deployed-file backups; actu
 rollback permissions and availability still need account verification. Restore prior deploy
 only with Max approval and recheck configuration; deploy rollback does not revert secrets.
 Streamlit and Apps Script are separate, not installed by this workflow. No data/trigger writes.
+
+Personal credential setup can be grouped: Max may save the JSON reader file directly as
+repository Actions secret PMS_GOOGLE_SERVICE_ACCOUNT (only PERSONAL). After exact release
+approval and destination/budget/rollback guards, publish sets missing production Functions
+variables from this JSON and public policy; it never overwrites differing existing values.
+Values and command output stay out of logs/artifacts. Failure may leave newly added variables:
+record and review; rollback of deploy does not remove them. DEMO receives no reader JSON.
+No OPENAI_API_KEY is created or copied; enabling paid advisor calls requires its own setup
+and authorization. With absent advisor keys, keep unavailable UI truthful, not fake success.
