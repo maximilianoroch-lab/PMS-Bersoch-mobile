@@ -8,7 +8,7 @@ function guard(input,site,now=Date.now()){
  if(input.approval!==`PUBLICAR ${POLICY.site} ${input.sha}`)throw Error('Falta aprobación exacta');
  const credits=Number(input.credits),at=Date.parse(input.checkedAt);
  if(!Number.isFinite(credits)||credits<130||!Number.isFinite(at)||now-at<0||now-at>30*60*1000)throw Error('Saldo/reserva o fecha no válidos; revalidar');
- if(site.name!==POLICY.site||site.id!==input.siteId)throw Error('Sitio equivocado');
+ if(site.name!==POLICY.site||(site.id!==input.siteId&&input.siteId!==POLICY.site+'.netlify.app'))throw Error('Sitio equivocado');
  if(site.build_settings?.stop_builds!==true)throw Error('Los builds deben seguir detenidos');
  if(site.prevent_non_git_prod_deploys===true)throw Error('La política del sitio bloquea publicación manual');
  if(site.published_deploy?.id!==POLICY.rollback)throw Error('Producción cambió; revisar respaldo y reversión');
@@ -24,7 +24,7 @@ function prepare(){
  console.log('Artefacto estático preparado; fuente '+actual+'; archivos '+entries.length);
 }
 async function publish(){
- const cli=process.env.NETLIFY_CLI,token=process.env.NETLIFY_AUTH_TOKEN,siteId=process.env.NETLIFY_SITE_ID;
+ const cli=process.env.NETLIFY_CLI,token=process.env.NETLIFY_AUTH_TOKEN,siteId=POLICY.site+'.netlify.app';
  if(!cli||!token||!siteId)throw Error('Falta configuración privada de GitHub');
  const response=await fetch('https://api.netlify.com/api/v1/sites/'+encodeURIComponent(siteId),{headers:{Authorization:'Bearer '+token},redirect:'error',signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error('No se pudo verificar sitio; HTTP '+response.status);

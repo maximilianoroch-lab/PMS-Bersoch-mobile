@@ -16,10 +16,10 @@ less than30 minutes old; this is an input confirmed by Max, NOT a billing API re
 Runtime usage remains variable. No exploratory publishes or retries. No automatic builds
 are activated. CLI bundles Functions with root production dependencies. No Drop upload.
 
-Only publish step receives repository Actions secrets NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID.
+Only publish step receives repository Actions secret NETLIFY_AUTH_TOKEN.
 Max must enter those directly in GitHub; never chat, artifacts or repo files. Prefer token
 with restricted team/site access when available and short expiration; revoke after release.
-Personal and DEMO have separate site-ID secrets; destination name is checked via GET API,
+Destination is fixed separately in each policy by its existing Netlify domain (accepted by the API/CLI); no site-ID secret or new identifier is needed. Destination name is checked via GET API,
 stop_builds must still be true, manual publishing must be allowed, and current production
 must match the backed-up deploy in policy.json. Any mismatch aborts, never changes policy.
 Personal also requires correct production Functions env values: PMS_DATA_MODE=private,
