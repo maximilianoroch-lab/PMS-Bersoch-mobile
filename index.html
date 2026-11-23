@@ -57,9 +57,18 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 @media(max-width:360px){.voice-button{padding:10px 6px;gap:6px}.voice-button img{width:34px;height:34px}.voice-button strong{font-size:11px}}
 </style>
 </head>
-<body>
+<body data-privacy-state="locked">
+<style>
+body[data-privacy-state="locked"] > :not(#privacyGate){visibility:hidden}
+#privacyGate{position:fixed;inset:0;z-index:9999;background:#07111f;color:#f4f7fb;padding:12vh 24px;text-align:center}
+body:not([data-privacy-state="locked"]) #privacyGate{display:none}
+#privateSignIn{display:flex;justify-content:center;margin-top:24px}
+#privateLogout{position:fixed;right:12px;top:60px;z-index:10000}
+</style>
+<section id="privacyGate" aria-label="Acceso a cartera personal"><h1>PMS Bersoch</h1><p id="privacyMessage">Verificando acceso…</p><div id="privateSignIn"></div></section>
+<button id="privateLogout" hidden type="button">Cerrar sesión</button>
 <div class="app">
-<header class="topbar"><div class="brandrow"><div><div class="brand">PMS · Cartera <span style="color:var(--muted);font-size:11px">v2 · DEV r11</span></div><div class="asof" id="asof">Conectando…</div></div><button class="refresh" id="refreshBtn">Actualizar</button></div></header>
+<header class="topbar"><div class="brandrow"><div><div class="brand">PMS Bersoch <span style="color:var(--muted);font-size:11px">Mobile</span></div><div class="asof" id="asof">Conectando…</div></div><button class="refresh" id="refreshBtn">Actualizar</button></div></header>
 <main>
 <div id="banner" class="notice hidden"></div>
 <section class="page active" id="page-resumen">
@@ -69,9 +78,14 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 <button class="voice-button" id="voiceSummaryBtn" type="button"><img src="./audio-summary.png" alt=""><span><strong>Resumen en voz</strong><small>Escuchá tu cartera en menos de 2 min</small></span></button>
 <button class="voice-button" id="voiceAdvisorBtn" type="button" hidden aria-hidden="true" tabindex="-1" style="display:none"><img src="./ai-advisor.png" alt=""><span><strong>Asesor IA</strong><small>Consultá y conversá</small></span></button>
 </div>
+<div class="card" id="advancedToolsLink" style="margin:12px 0">
+ <h2>Herramientas avanzadas · escritorio</h2>
+ <div class="sub">Comparar activos, simular operaciones y consultar indicadores técnicos en PMS Bersoch escritorio. Se abre otra aplicación y no se envían posiciones por el enlace.</div>
+ <a href="https://pms-max.streamlit.app/" target="_blank" rel="noopener noreferrer" aria-label="Abrir PMS Bersoch escritorio en una nueva pestaña">Abrir escritorio PMS Bersoch ↗</a>
+</div>
 <div class="kpis" id="homeKpis"></div>
  <div class="grid2">
-  <div class="card"><h2>Tipo</h2><div class="sub">Composición de la cartera. FUT se integra a Crypto.</div><div class="barlist" id="monthlyTypeBars"></div></div>
+  <div class="card"><h2>Mix histórico por tipo (%)</h2><div class="sub">Participación entre los cinco grupos, sin efectivo histórico. No equivale al porcentaje de todo el patrimonio.</div><div class="periods" id="homeTypePeriods"></div><div class="barlist" id="monthlyTypeBars"></div></div>
   <div class="card"><h2>Top 5 posiciones</h2><div class="sub">Concentración por ticker.</div><div class="barlist" id="topBars"></div></div>
  </div>
  <div class="section-title">Evolución</div>
@@ -80,13 +94,12 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
 <section class="page" id="page-diversificacion">
  <div class="card"><h2>Región</h2><div class="sub">Incluye look-through agregado de ETFs cuando está disponible.</div><div class="barlist" id="regionBars"></div></div>
  <div class="card"><h2>Sector / exposición</h2><div class="sub">Incluye exposición interna aproximada de ETFs.</div><div class="barlist" id="sectorBars"></div></div>
- <div class="card"><h2>ETFs principales</h2><div class="sub">Detalle técnico de ETFs; GLD permanece Oro en la composición principal.</div><div class="barlist" id="etfBars"></div></div>
+ <div class="card"><h2>Mix histórico por tipo (%)</h2><div class="sub">Peso relativo a los cinco grupos; efectivo histórico excluido.</div><div class="periods" id="sharePeriods"></div><div id="shareLines"></div></div><div class="card"><h2>ETFs principales</h2><div class="sub">Los fondos y GLD se muestran en ETF; la clase Oro sigue identificada por separado.</div><div class="barlist" id="etfBars"></div></div>
  <div class="card"><h2>Custodios</h2><div class="sub">Tocá una barra para ver los activos. Criteria consolida 4666 y 4704.</div><div class="barlist" id="custBars"></div></div>
 </section>
 <section class="page" id="page-evolucion">
- <div class="card"><h2>Evolución patrimonial</h2><div class="sub">Cierres observados, sin completar meses faltantes. Elegí «Mes» para ver los últimos registros disponibles de cada mes. Cambios patrimoniales ≠ rentabilidad.</div><div class="periods" id="periods"></div><div class="periods" id="chartModes"><button class="period active" data-chart="line">Curva</button><button class="period" data-chart="bars">Barras</button></div><svg class="spark" id="spark"></svg><div class="histlist" id="histText"></div></div>
- <div class="card"><h2>Patrimonio mensual por tipo · 5 grupos</h2><div class="sub">Curvas de valuación por tipo, en miles de USD · sin Cash. El patrimonio total sigue incluyendo efectivo. Los cierres anteriores a octubre de 2026 son reconstrucciones estimadas.</div><div id="typeLines"></div><div class="sub" id="typeNote"></div></div>
- <div class="card"><h2>Composición mensual · barras apiladas</h2><div class="sub">Cripto, ETF, CEDEAR, Bonos y Acciones, sin Cash · miles de USD.</div><div id="typeBars"></div></div>
+ <div class="card"><h2>Patrimonio total · USD, incluye efectivo</h2><div class="sub">Cierres observados, sin completar meses faltantes. Elegí «Mes» para ver los últimos registros disponibles de cada mes. Cambios patrimoniales ≠ rentabilidad.</div><div class="periods" id="periods"></div><div class="periods" id="chartModes"><button class="period active" data-chart="line">Curva</button><button class="period" data-chart="bars">Barras</button></div><svg class="spark" id="spark"></svg><div class="histlist" id="histText"></div></div>
+ <div class="card"><h2>Evolución por tipo · miles de USD</h2><div class="periods" id="typePeriods"></div><div class="sub">Curvas de valuación por tipo, en miles de USD · sin Cash. El patrimonio total sigue incluyendo efectivo. Los cierres anteriores a octubre de 2026 son reconstrucciones estimadas.</div><div id="typeLines"></div><div class="sub" id="typeNote"></div></div>
  <div class="card"><h2>Top 10 subas</h2><div class="sub">Orden por variación diaria positiva. El acumulado mensual no modifica el ranking.</div><div id="topRises"></div></div>
  <div class="card"><h2>Top 10 bajas</h2><div class="sub">Orden por variación diaria negativa, desde la mayor caída.</div><div id="topFalls"></div></div>
  <div class="card"><h2>Top 15 activos</h2><div class="sub">Principales posiciones: cotización y variación contra la última referencia.</div><div id="top15List"></div></div>
@@ -109,11 +122,12 @@ main{padding:3px 14px 22px}.page{display:none}.page.active{display:block}.hero,.
  <button class="navbtn" data-page="posiciones"><span class="ico">≡</span><span>Posiciones</span></button>
 </div></nav>
 <div class="sheet-overlay" id="custOverlay"><div class="bottomsheet" id="custSheet"><div class="handle"></div><div class="sheet-head"><div><div class="sheet-title" id="custTitle"></div><div class="sheet-total" id="custTotal"></div></div><button class="close" id="custClose">×</button></div><div class="accounts" id="custAccounts"></div><div id="custAssets"></div></div></div>
+<script src="./privacy-client.js"></script>
 <script>
 const SHEET_ID='18qu9LXo55qQZq4oEAq42u_DKaI7e9lZL_PkfUZiu0T0';
 const CACHE_KEY='pms-v2-monthly-black-annual-20261027';
 const csvUrl=(sheet,range)=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}${range?`&range=${encodeURIComponent(range)}`:''}`;
-let positions=[],typeRows=[],exposure=[],custSummary=[],custDetail=[],snapshots=[],homeRows=[],bannerRows=[],filterType='Todos',period='D';
+let positions=[],typeRows=[],exposure=[],custSummary=[],custDetail=[],snapshots=[],homeRows=[],bannerRows=[],filterType='Todos',period='M';
 let monthlyTypeHistory=[];
 function parseCSV(text){const out=[];let row=[],cur='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'&&text[i+1]==='"'){cur+='"';i++}else if(c==='"')q=false;else cur+=c}else{if(c==='"')q=true;else if(c===','){row.push(cur);cur=''}else if(c==='\n'){row.push(cur);out.push(row);row=[];cur=''}else if(c!=='\r')cur+=c}}if(cur.length||row.length){row.push(cur);out.push(row)}return out}
 function table(csv){const a=parseCSV(csv);if(!a.length)return[];const h=a[0].map(x=>x.trim());return a.slice(1).filter(r=>r.some(x=>String(x).trim()!=='')).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]??''])))}
@@ -137,7 +151,7 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
  document.getElementById('homeKpis').innerHTML=cards.map((x,i)=>{if(i===0){const [amount,share]=x[1].split('|');return `<div class="kpi crypto-kpi"><div class="lab">${x[0]}</div><div class="val">${amount} <span class="crypto-share">· ${share}</span> ${changeHtml(x[2])}</div><div class="note">${x[3]}</div></div>`}return `<div class="kpi"><div class="lab">${x[0]}</div><div class="val">${x[1]} ${changeHtml(x[2])}</div><div class="note">${x[3]}</div></div>`}).join('');
  const typeRef={};positions.forEach(r=>{const t=r.Tipo==='Derivado'?'Cripto':r.Tipo;typeRef[t]=(typeRef[t]||0)+num(r['Valor ref USD'])});
  const typeEntries=typeRows.filter(r=>!["CASH","EFECTIVO"].includes(String(r.Tipo||"").trim().toUpperCase())).map(r=>({name:r.Tipo,value:r.value,change:typeRef[r.Tipo]?r.value/typeRef[r.Tipo]-1:null})).sort((a,b)=>b.value-a.value);
- bars('typeBars',typeEntries,total,{scale:30,typeColors:true});
+ // La composición temporal se dibuja como curvas por renderMonthlyTypes().
  const topNow=positions.slice().sort((a,b)=>b.value-a.value);
  bars('topBars',topNow.slice(0,5).map(r=>({name:r.Ticker,value:r.value,change:r.chg})),total,{scale:15});
  const reg=[],sec=[];exposure.forEach(r=>{if(r.Región&&num(r.regionValue)>0)reg.push({name:r.Región,value:num(r.regionValue)});if(r.Sector&&num(r.sectorValue)>0)sec.push({name:r.Sector,value:num(r.sectorValue)})});
@@ -145,8 +159,8 @@ function render(){normalize();const hm=homeMap();const total=(hm['Patrimonio tot
  const dates=positions.map(x=>x['Fecha dato']).filter(Boolean).sort();document.getElementById('asof').textContent=dates.length?`Última actualización de mercado: ${dateFmt(dates[dates.length-1])}`:'Datos cargados';
 }
 function renderBanner(){const msgs=bannerRows.filter(r=>['ALERTA','REVISAR','ATENCIÓN'].includes(String(r.Estado||'').toUpperCase())).map(r=>r.Mensaje).filter(Boolean);const el=document.getElementById('banner');if(msgs.length){el.textContent=msgs.join(' · ');el.classList.remove('hidden')}else el.classList.add('hidden')}
-function aggregateSnaps(p){const ordered=snapshots.slice().filter(x=>parseDate(x.date)).sort((a,b)=>parseDate(a.date)-parseDate(b.date));if(p==='D')return ordered;const m=new Map();ordered.forEach(x=>{const d=parseDate(x.date);if(!d)return;let key;if(p==='S'){const dt=new Date(d);const day=(dt.getDay()+6)%7;dt.setDate(dt.getDate()-day);key=dt.toISOString().slice(0,10)}else if(p==='M')key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;else key=String(d.getFullYear());m.set(key,x)});return[...m.values()]}
-function renderSnapshots(){renderMonthlyTypes();const periods=[['D','Día'],['S','Sem'],['M','Mes'],['A','Año']];['periods','homePeriods'].forEach(id=>{const e=document.getElementById(id);e.innerHTML=periods.map(x=>`<button class="period ${period===x[0]?'active':''}" data-period="${x[0]}">${x[1]}</button>`).join('');e.querySelectorAll('.period').forEach(b=>b.onclick=()=>{period=b.dataset.period;renderSnapshots()})});const data=aggregateSnaps(period);drawSpark('spark',data);drawSpark('homeSpark',data);const txt=data.slice(-8).map((x,i)=>{const idx=data.indexOf(x),prev=idx>0?data[idx-1]:null;const delta=prev?x.value-prev.value:null;const pctChange=prev&&prev.value>0?delta/prev.value:null;const sign=delta>0?'+':'';return `${dateFmt(x.date)} · Patrimonio: ${usd(x.value)}${delta===null?'':` · Cambio: ${sign}${usd(delta)} (${sign}${(pctChange*100).toFixed(2).replace('.',',')}%)`}`}).join('<br>');document.getElementById('histText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">La comparación es contra el snapshot anterior disponible, no necesariamente el día anterior.</div>';document.getElementById('homeHistText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">Cambios patrimoniales entre snapshots disponibles; sin ajuste por aportes/retiros. No equivalen a rentabilidad diaria.</div>'}
+function aggregateSnaps(p){const ordered=snapshots.slice().filter(x=>parseDate(x.date)).sort((a,b)=>parseDate(a.date)-parseDate(b.date));if(p==='D')return ordered;const m=new Map();ordered.forEach(x=>{const d=parseDate(x.date);if(!d)return;let key;if(p==='S'){const dt=new Date(d);const day=(dt.getDay()+6)%7;dt.setDate(dt.getDate()-day);key=dt.toISOString().slice(0,10)}else if(p==='M')key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;else if(p==='Q')key=d.getFullYear()+'-T'+Math.ceil((d.getMonth()+1)/3);else if(p==='H')key=d.getFullYear()+'-S'+Math.ceil((d.getMonth()+1)/6);else key=String(d.getFullYear());m.set(key,x)});return[...m.values()]}
+function renderSnapshots(){renderMonthlyTypes();const periods=[['M','Mensual'],['Q','Trimestral'],['H','Semestral'],['A','Anual']];['periods','homePeriods'].forEach(id=>{const e=document.getElementById(id);e.innerHTML=periods.map(x=>`<button class="period ${period===x[0]?'active':''}" data-period="${x[0]}">${x[1]}</button>`).join('');e.querySelectorAll('.period').forEach(b=>b.onclick=()=>{period=b.dataset.period;renderSnapshots()})});const data=aggregateSnaps(period);drawSpark('spark',data);drawSpark('homeSpark',data);const txt=data.slice(-8).map((x,i)=>{const idx=data.indexOf(x),prev=idx>0?data[idx-1]:null;const delta=prev?x.value-prev.value:null;const pctChange=prev&&prev.value>0?delta/prev.value:null;const sign=delta>0?'+':'';return `${dateFmt(x.date)} · Patrimonio: ${usd(x.value)}${delta===null?'':` · Cambio: ${sign}${usd(delta)} (${sign}${(pctChange*100).toFixed(2).replace('.',',')}%)`}`}).join('<br>');document.getElementById('histText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">La comparación es contra el snapshot anterior disponible, no necesariamente el día anterior.</div>';document.getElementById('homeHistText').innerHTML=(txt||'Sin snapshots')+'<div style="font-size:11px;opacity:.8;margin-top:9px">Cambios patrimoniales entre snapshots disponibles; sin ajuste por aportes/retiros. No equivalen a rentabilidad diaria.</div>'}
 let monthlyChartMode='line';
 function drawSpark(id,data){const svg=document.getElementById(id);if(!data.length){svg.innerHTML='';return}
 const vals=data.map(x=>x.value),low=Math.min(...vals),high=Math.max(...vals),span=Math.max(high-low,Math.abs(high)*0.02,1),min=Math.max(0,low-span*0.15),max=high+span*0.15,W=320,H=140,p=12;
@@ -259,50 +273,62 @@ const TYPE_COLORS={'Cripto':'#d71920','Crypto':'#d71920','Derivado':'#d71920',
   'ETF':'#ffc000','Cedear':'#80c342','CEDEAR':'#80c342',
   'Bono AR':'#4472c4','Bonos':'#4472c4','Soberanos':'#4472c4',
   'Acción AR':'#8c8c8c','Acciones':'#8c8c8c'};
-function monthlySeries(rows){
- return (rows||[]).map(r=>{
-   const mes=String(r.Mes||'');
-   const vals=['Cripto','ETF','CEDEAR','Bonos','Acciones'].map(key=>num(r[key]));
-   return {mes,vals,estado:String(r.Estado||'ESTIMADO')};
- }).filter(p=>/^20[0-9]{2}-[0-9]{2}$/.test(p.mes)&&p.vals.every(v=>Number.isFinite(v)&&v>=0))
- .sort((a,b)=>a.mes.localeCompare(b.mes));
+let typePeriod='M',shownTypes=new Set([0,1,2,3,4]);
+function monthlySeries(rows){const m=new Map();for(const r of rows||[]){const mes=String(r.Mes||'').trim(),vals=['Cripto','ETF','CEDEAR','Bonos','Acciones'].map(t=>num(r[t]));if(/^20\d{2}-(0[1-9]|1[0-2])$/.test(mes)&&vals.every(v=>Number.isFinite(v)&&v>=0))m.set(mes,{mes,vals,estado:r.Estado||'ESTIMADO'});}return [...m.values()].sort((a,b)=>a.mes.localeCompare(b.mes));}
+function typeBuckets(data,mode){const m=new Map();for(const p of data){const [year,mm]=p.mes.split('-'),month=Number(mm);const key=mode==='A'?year:mode==='H'?year+'-S'+Math.ceil(month/6):mode==='Q'?year+'-T'+Math.ceil(month/3):p.mes;m.set(key,{...p,key});}return [...m.values()];}
+function drawTypes(el,pts,shares){
+ if(!el)return;
+ if(pts.length<2){el.innerHTML='<div class="empty">Se necesitan dos períodos disponibles para graficar.</div>';return;}
+ const W=Math.max(430,pts.length*36),H=245,l=47,r=13,t=13,b=41,max=shares?100:Math.max(10,Math.ceil(Math.max(...pts.flatMap(p=>p.vals))*1.08/10)*10),X=i=>l+(W-l-r)*i/(pts.length-1),Y=v=>H-b-(H-t-b)*v/max;
+ const value=(p,k)=>shares?(p.vals.reduce((a,b)=>a+b,0)?p.vals[k]/p.vals.reduce((a,b)=>a+b,0)*100:0):p.vals[k];
+ const grid=[0,.25,.5,.75,1].map(q=>'<line x1="'+l+'" x2="'+(W-r)+'" y1="'+Y(max*q)+'" y2="'+Y(max*q)+'" stroke="#32455b"/><text x="'+(l-5)+'" y="'+(Y(max*q)+4)+'" text-anchor="end" font-size="10" fill="#bbcbdc">'+Math.round(max*q)+(shares?'%':'')+'</text>').join('');
+ const labels=pts.map((p,i)=>i%Math.max(1,Math.ceil(pts.length/7))===0||i===pts.length-1?'<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="#b9c9d8">'+p.key.slice(-7)+'</text>':'').join('');
+ const paths=MONTH_NAMES.map((name,k)=>!shownTypes.has(k)?'':'<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="3" stroke-linecap="round" points="'+pts.map((p,i)=>X(i)+','+Y(value(p,k))).join(' ')+'"><title>'+name+'</title></polyline>'+pts.map((p,i)=>'<circle cx="'+X(i)+'" cy="'+Y(value(p,k))+'" r="2" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+name+' · '+value(p,k).toFixed(1)+(shares?'%':' mil USD')+' · '+p.estado+'</title></circle>').join('')).join('');
+ el.innerHTML='<div style="background:#000;border-radius:10px;padding:8px;overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+W+'px;max-width:none;height:auto" role="img" aria-label="'+(shares?'Mix porcentual sin efectivo':'Valuación en miles de USD')+'">'+grid+paths+labels+'</svg></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+MONTH_NAMES.map((name,k)=>'<button class="period" type="button" data-type="'+k+'" aria-pressed="'+shownTypes.has(k)+'" style="border-color:'+MONTH_COLORS[k]+';opacity:'+(shownTypes.has(k)?1:.4)+'">'+name+'</button>').join('')+'</div><div class="sub">'+(shares?'Denominador: cinco tipos combinados, sin efectivo; no es porcentaje del patrimonio total.':'Escala dinámica · miles de USD, excluido el efectivo.')+'</div>';
+ el.querySelectorAll('[data-type]').forEach(btn=>btn.onclick=()=>{const k=Number(btn.dataset.type);shownTypes.has(k)?shownTypes.delete(k):shownTypes.add(k);renderMonthlyTypes();});
 }
 function renderMonthlyTypes(){
- const lines=document.getElementById('typeLines'),bars=document.getElementById('monthlyTypeBars'),note=document.getElementById('typeNote');
- if(!lines||!bars)return;
- const pts=monthlySeries(monthlyTypeHistory);
- const legend='<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;margin:6px 0 14px">'+MONTH_NAMES.map((n,i)=>'<span style="color:'+MONTH_COLORS[i]+'">● '+n+'</span>').join('')+'</div>';
- if(pts.length<2){lines.innerHTML='<div class="empty">Evolución histórica pendiente</div>';bars.innerHTML='<div class="empty">Se necesitan dos cierres mensuales completos.</div>';note.textContent='Sin cierres suficientes; no se inventan precios.';return;}
- const W=Math.max(620,pts.length*24),H=240,l=48,r=14,t=16,b=35;
- const X=i=>l+(W-l-r)*(i+.5)/pts.length;
- const labels=pts.map((p,i)=>i%3===0||i===pts.length-1?'<text x="'+X(i)+'" y="'+(H-7)+'" fill="#9eb5cb" font-size="10" text-anchor="middle">'+p.mes.slice(2)+'</text>':'').join('');
- const annual=pts.map((p,i)=>p.mes.endsWith('-12')?'<line x1="'+X(i)+'" x2="'+X(i)+'" y1="'+t+'" y2="'+(H-b)+'" stroke="#aaaaaa" stroke-dasharray="3 5"/>':'').join('');
- function svg(content,max,aria){
-  const Y=v=>H-b-(H-t-b)*v/max;
-  const grid=[0,.25,.5,.75,1].map(q=>'<line x1="'+l+'" x2="'+(W-r)+'" y1="'+Y(max*q)+'" y2="'+Y(max*q)+'" stroke="#32455b"/><text x="'+(l-5)+'" y="'+(Y(max*q)+3)+'" fill="#aebed0" text-anchor="end" font-size="10">'+Math.round(max*q)+'</text>').join('');
-  return '<div style="background:#000;border-radius:8px;padding:8px"><div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+W+'px;max-width:none;height:auto;background:#000" role="img" aria-label="'+aria+'">'+grid+content+annual+labels+'</svg></div>'+legend+'</div>';
- }
- const maxCurve=90; // miles USD, escala fija acordada para PMS Bersoch
- const Ycurve=v=>H-b-(H-t-b)*v/maxCurve;
- const linesSvg=MONTH_TYPES.map((_,k)=>{
-  // Clips excepcionales: mantener 0–90 mil sin dibujar fuera del gráfico.
-  const valid=pts.every(p=>p.vals[k]<=maxCurve);
-  const points=pts.map((p,i)=>X(i)+','+Ycurve(Math.min(maxCurve,p.vals[k]))).join(' ');
-  return '<polyline fill="none" stroke="'+MONTH_COLORS[k]+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="'+points+'"><title>'+MONTH_NAMES[k]+(valid?'':' (supera escala)')+'</title></polyline>';
- }).join('');
- lines.innerHTML=svg(linesSvg,maxCurve,'Cinco curvas de patrimonio en miles de dólares, escala de cero a noventa');
- const maxStack=Math.max(1,...pts.map(p=>p.vals.reduce((x,y)=>x+y,0)))*1.06;
- const Ybars=v=>H-b-(H-t-b)*v/maxStack, width=Math.min(27,(W-l-r)/pts.length*.68);
- bars.innerHTML=svg(pts.map((p,i)=>{let from=0;return [0,3,4,1,2].map(k=>{const v=p.vals[k],next=from+v;const rect='<rect x="'+(X(i)-width/2)+'" y="'+Ybars(next)+'" width="'+width+'" height="'+Math.max(0,Ybars(from)-Ybars(next))+'" fill="'+MONTH_COLORS[k]+'"><title>'+p.mes+' · '+MONTH_NAMES[k]+': US$ '+v.toFixed(1)+' mil</title></rect>';from=next;return rect;}).join('');}).join(''),maxStack,'Composición mensual apilada en miles de dólares');
- note.textContent=pts.length+' meses · Curvas: 0–90 mil USD por grupo; barras: escala total dinámica. Histórico preliminar anterior a snapshots; no es rentabilidad.';
+ const options=[['M','Mensual'],['Q','Trimestral'],['H','Semestral'],['A','Anual']];
+ for(const id of ['homeTypePeriods','typePeriods','sharePeriods']){const e=document.getElementById(id);if(!e)continue;e.innerHTML=options.map(([k,n])=>'<button class="period '+(k===typePeriod?'active':'')+'" type="button" data-type-period="'+k+'" aria-pressed="'+(k===typePeriod)+'">'+n+'</button>').join('');e.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{typePeriod=btn.dataset.typePeriod;renderMonthlyTypes();});}
+ const pts=typeBuckets(monthlySeries(monthlyTypeHistory),typePeriod);
+ drawTypes(document.getElementById('typeLines'),pts,false);
+ drawTypes(document.getElementById('monthlyTypeBars'),pts,true);
+ drawTypes(document.getElementById('shareLines'),pts,true);
+ const note=document.getElementById('typeNote');if(note)note.textContent=pts.length+' períodos: último mes disponible de cada período · puntos estimados identificados.';
 }
-async function getCSV(sheet,range){const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
-function saveCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}))}catch(e){}}
-function loadCache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(e){return null}}
-async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];const texts=await Promise.allSettled(names.map(x=>getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});applyData(data);saveCache(data);render()}catch(e){const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
+async function getCSV(sheet,range){if(PMSPrivacy.mode()!=='public')throw Error('Lectura pública bloqueada');const r=await fetch(csvUrl(sheet,range),{cache:'no-store'});if(!r.ok)throw new Error(`${sheet}: ${r.status}`);return r.text()}
+function validateBersochBundle(d){
+ if(!d||typeof d!=='object'||!Array.isArray(d.positions)||!Array.isArray(d.home)||!Array.isArray(d.types))throw Error('Lote incompleto');
+ if(!d.positions.length||!d.home.length||!d.types.length)throw Error('Datos esenciales vacíos');
+ const tickers=d.positions.map(r=>String(r.Ticker||'').trim().toUpperCase()).filter(Boolean);
+ if(tickers.length<1||tickers.length!==d.positions.length||tickers.length!==new Set(tickers).size)throw Error('Instrumentos vacíos o duplicados');
+ const valid=d.positions.every(r=>{
+  const raw=String(r['Valor USD']??'').trim();
+  const amount=num(raw);
+  // num() is tolerant and maps garbage to zero; never certify garbage as cash.
+  return /\d/.test(raw)&&!/[^0-9.,$\s+-]/.test(raw)&&
+    Number.isFinite(amount)&&amount>=0;
+ });
+ if(!valid)throw Error('Faltan valuaciones verificables');
+ // Preserve all optional sections, never reconstruct history from current quotes.
+ return d;
+}
+function saveCache(data){try{
+ if(PMSPrivacy.mode()!=='public')return;
+ validateBersochBundle(data);
+ localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}));
+}catch(e){}}
+function loadCache(){try{
+ if(PMSPrivacy.mode()!=='public')return null;
+ const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+ if(!c||!Number.isFinite(c.ts)||c.ts<=0||c.ts>Date.now()+60000)return null;
+ validateBersochBundle(c.data);
+ return c;
+}catch(e){return null}}
+async function load(){const btn=document.getElementById('refreshBtn');btn.classList.add('loading');btn.disabled=true;btn.textContent='Cargando…';try{const names=[['positions','app_feed_v2','A1:T67'],['home','app_feed_v2','A69:F77'],['banners','app_feed_v2','A80:D89'],['types','dashboard_tipo_v2','A1:E8'],['exposure','dashboard_exposicion_v2','A1:G20'],['custSummary','app_custodia_resumen_v2','A1:J10'],['custDetail','app_custodia_detalle_v2','A1:L130'],['snapshots','snapshot_series_v2','A1:H1000'],['cashRows','custodia_cash_v2','A1:L100'],['monthlyTypes','evolucion_tipo_mensual_estimado','A1:K60'],['historicalQuotes','historial_precios','A1:J5000']];if(!['public','private'].includes(PMSPrivacy.mode()))throw Error('Acceso no verificado');const privateTables=PMSPrivacy.mode()==='private'?await PMSPrivacy.tables():null;const texts=await Promise.allSettled(names.map(x=>privateTables?(typeof privateTables[x[0]]==='string'?Promise.resolve(privateTables[x[0]]):Promise.reject(Error('Falta sección privada'))):getCSV(x[1],x[2])));const data={};names.forEach((x,i)=>{if(texts[i].status==='fulfilled')data[x[0]]=x[0]==='exposure'?parseExposure(texts[i].value):table(texts[i].value);else if(x[0]==='historicalQuotes'){data.historicalQuotes=[];data.historicalError=String(texts[i].reason?.message||'fuente no disponible')}else throw texts[i].reason;});validateBersochBundle(data);applyData(data);saveCache(data);render();PMSPrivacy.reveal()}catch(e){if(PMSPrivacy.mode()==='private')PMSPrivacy.lock('No se pudo cargar la cartera privada. Ingresá nuevamente.');const cached=loadCache();if(cached?.data){applyData(cached.data);render();document.getElementById('asof').textContent=`Offline · última actualización guardada ${new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short'}).format(new Date(cached.ts))}`;const b=document.getElementById('banner');b.textContent='Sin conexión al Sheet · mostrando la última actualización guardada';b.classList.remove('hidden')}else{document.getElementById('asof').textContent=`No se pudo leer el PMS v2: ${e.message}`;document.getElementById('totalWealth').textContent='Sin conexión'}}finally{btn.classList.remove('loading');btn.disabled=false;btn.textContent='Actualizar'}}
 function parseExposure(csv){const a=parseCSV(csv),out=[];for(let i=1;i<a.length;i++){const r=a[i]||[];if(r[0]||r[4])out.push({Región:r[0]||'',regionValue:num(r[1]),Sector:r[4]||'',sectorValue:num(r[5])})}return out}
 function applyData(d){dataNormalized=false;positions=d.positions||[];homeRows=d.home||[];bannerRows=d.banners||[];typeRows=d.types||[];exposure=d.exposure||[];custSummary=d.custSummary||[];custDetail=d.custDetail||[];snapshots=d.snapshots||[];cashRows=d.cashRows||[];monthlyTypeHistory=d.monthlyTypes||[];historicalQuotes=d.historicalQuotes||[];historicalError=d.historicalError||''}
-document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});load();
+document.getElementById('refreshBtn').addEventListener('click',load);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 // Funciones de voz: resumen determinista, asesor a través de endpoint seguro.
 const voiceDialog=document.getElementById('voiceDialog');
@@ -358,7 +384,7 @@ function openAdvisor(){openVoice('Asesor IA · cartera','advisor');chatHistory=[
  const form=document.createElement('form');form.className='voice-chat-entry';form.onsubmit=event=>{event.preventDefault();sendChat()};form.innerHTML='<input id="voiceChatInput" aria-label="Pregunta al Asesor IA" maxlength="550" placeholder="Preguntale al asesor…"><button class="voice-mini" type="submit">Enviar</button>';
  voiceControls.appendChild(form);actionButton('🎙 Dictar',recognition);actionButton('■ Detener voz',stopVoice)}
 async function sendChat(){const input=document.getElementById('voiceChatInput');const query=input.value.trim();if(!query||voiceBusy)return;input.value='';pushChat('user',query);voiceBusy=true;
- try{const d=portfolioVoiceContext();let accessCode=sessionStorage.getItem('pmsAdvisorCode')||'';if(!accessCode){accessCode=prompt('Código de acceso al Asesor IA (configurado en Netlify):')||'';if(!accessCode)throw Error('Hace falta el código de acceso.');sessionStorage.setItem('pmsAdvisorCode',accessCode)}const response=await fetch('/.netlify/functions/advisor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:query,portfolio:d,history:chatHistory.slice(-6),access_code:accessCode})});let parsed;try{parsed=await response.json()}catch{parsed={error:'No se encontró el servicio de IA. Se debe desplegar la función en Netlify y configurar su clave segura.'}};
+ try{const d=portfolioVoiceContext();let accessCode=sessionStorage.getItem('pmsAdvisorCode')||'';if(!accessCode){accessCode=prompt('Código de acceso al Asesor IA (configurado en Netlify):')||'';if(!accessCode)throw Error('Hace falta el código de acceso.');sessionStorage.setItem('pmsAdvisorCode',accessCode)}const response=await fetch('/.netlify/functions/advisor',{method:'POST',headers:{'Content-Type':'application/json',...PMSPrivacy.headers()},body:JSON.stringify({question:query,portfolio:d,history:chatHistory.slice(-6),access_code:accessCode})});let parsed;try{parsed=await response.json()}catch{parsed={error:'No se encontró el servicio de IA. Se debe desplegar la función en Netlify y configurar su clave segura.'}};
  if(!response.ok)throw Error(parsed.error||'No se pudo consultar al Asesor IA.');
  const answer=String(parsed.answer||'No recibí una respuesta.');pushChat('assistant',answer);chatHistory.push({role:'user',content:query},{role:'assistant',content:answer});speakVoice(answer);
  }catch(error){pushChat('assistant',`Asesor no disponible: ${error.message}. El resumen en voz sigue funcionando sin el servidor.`)}finally{voiceBusy=false}}
@@ -366,5 +392,7 @@ document.getElementById('voiceSummaryBtn').onclick=openSummary;
 document.getElementById('voiceAdvisorBtn').onclick=openAdvisor;
 document.getElementById('voiceClose').onclick=closeVoice;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&voiceDialog.classList.contains('open'))closeVoice()});
+PMSPrivacy.init({onReady:load,onLocked:()=>{applyData({});stopVoice();chatHistory=[];voiceText.textContent='';closeVoice();}});
+window.addEventListener('pagehide',()=>{if(PMSPrivacy.mode()==='private')PMSPrivacy.lock('Volvé a ingresar para ver la cartera.');});
 </script>
 </body></html>

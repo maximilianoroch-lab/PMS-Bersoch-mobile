@@ -1,0 +1,78 @@
+name: Controlled Mobile release
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Prepare only, or publish after Max approval
+        type: choice
+        options: [prepare, publish]
+        default: prepare
+      expected_sha:
+        description: Full approved commit SHA
+        required: true
+        type: string
+      approval:
+        description: PUBLICAR site-name full-SHA (publication only)
+        type: string
+      credits_available:
+        description: Current available credits, verified by Max (publication only)
+        type: string
+      credits_checked_at:
+        description: UTC timestamp, ISO8601, less than 30 minutes old
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: controlled-mobile-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify reviewed commit and local release guards
+        run: |
+          node --test release/guard.test.cjs
+          node release/controlled-mobile.cjs prepare
+      - name: Install application dependencies when locked
+        run: |
+          if [ -f package-lock.json ]; then npm ci; fi
+      - name: Run application tests
+        run: node --test tests/*.test.cjs
+      - name: Save exact prepared static artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-reviewed-static-${{ github.run_id }}
+          path: |
+            release-static/
+            release-manifest.json
+          retention-days: 7
+      - name: Install pinned Netlify CLI without credentials
+        if: inputs.mode == 'publish'
+        run: npm install --prefix "$RUNNER_TEMP/max-netlify-cli" --no-audit --no-fund netlify-cli@27.20.1
+      - name: Publish once after verified destination and explicit approval
+        if: inputs.mode == 'publish'
+        env:
+          NETLIFY_CLI: ${{ runner.temp }}/max-netlify-cli/node_modules/.bin/netlify
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          PMS_GOOGLE_SERVICE_ACCOUNT: ${{ secrets.PMS_GOOGLE_SERVICE_ACCOUNT }}
+          RELEASE_APPROVAL: ${{ inputs.approval }}
+          CREDITS_AVAILABLE: ${{ inputs.credits_available }}
+          CREDITS_CHECKED_AT: ${{ inputs.credits_checked_at }}
+        run: node release/controlled-mobile.cjs publish
+      - name: Record deployment identity without credentials
+        if: success() && inputs.mode == 'publish'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-publication-result-${{ github.run_id }}
+          path: release-result.json
+          retention-days: 30

@@ -2,6 +2,8 @@
 // Requiere variable OPENAI_API_KEY configurada en Netlify, nunca en archivos públicos.
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return {statusCode:405,body:JSON.stringify({error:'Método no permitido'})};
+  try { await require('../../server/private-access.cjs').authorizeEvent(event); }
+  catch { return {statusCode:403,headers:{'Cache-Control':'no-store'},body:JSON.stringify({error:'Sesión privada requerida'})}; }
   if (!process.env.OPENAI_API_KEY || !process.env.ADVISOR_ACCESS_CODE) return {statusCode:503,body:JSON.stringify({error:'Falta configurar OPENAI_API_KEY o ADVISOR_ACCESS_CODE en Netlify'})};
   try {
     if ((event.body||'').length>18000) return {statusCode:413,body:JSON.stringify({error:'Consulta demasiado extensa'})};
