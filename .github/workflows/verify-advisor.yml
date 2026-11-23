@@ -21,3 +21,16 @@ jobs:
       - run: node tests/cache-browser.cjs
       - run: node tests/private-browser.cjs
       - run: npm run build
+      - name: Validate controlled release guards and prepare static artifact
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          node --test release/guard.test.cjs
+          node release/controlled-mobile.cjs prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-mobile-static-${{ github.run_id }}
+          path: |
+            release-static/
+            release-manifest.json
+          retention-days: 7
