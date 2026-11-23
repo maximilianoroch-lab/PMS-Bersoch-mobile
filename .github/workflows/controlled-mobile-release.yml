@@ -58,7 +58,9 @@ jobs:
           retention-days: 7
       - name: Install pinned Netlify CLI without credentials
         if: inputs.mode == 'publish'
-        run: npm install --prefix "$RUNNER_TEMP/max-netlify-cli" --no-audit --no-fund netlify-cli@27.20.1
+        run: |
+          npm install --prefix "$RUNNER_TEMP/max-netlify-cli" --no-audit --no-fund netlify-cli@23.11.0
+          node --input-type=module -e 'const m=await import(process.argv[1]); if(typeof m.envSet!=="function") throw Error("Netlify env writer unavailable");' "file://$RUNNER_TEMP/max-netlify-cli/node_modules/netlify-cli/dist/commands/env/env-set.js"
       - name: Publish once after verified destination and explicit approval
         if: inputs.mode == 'publish'
         env:
