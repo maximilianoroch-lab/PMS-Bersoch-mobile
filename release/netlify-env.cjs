@@ -35,7 +35,7 @@ async function configurePersonalEnv(site,token,desired,fetcher=fetch){
  const initial=await request(sitePath);
  const missing=checkVariables(initial,desired,true);
  if(!missing.length)return;
- const body=missing.map(key=>({key,scopes:['functions'],is_secret:key==='PMS_GOOGLE_SERVICE_ACCOUNT',values:[{context:'production',value:desired[key]}]}));
+ const body=missing.map(key=>({key,...(key==='PMS_GOOGLE_SERVICE_ACCOUNT'?{scopes:['builds','functions','runtime']}:{}),is_secret:key==='PMS_GOOGLE_SERVICE_ACCOUNT',values:[{context:'production',value:desired[key]}]}));
  const accountPath='accounts/'+encodeURIComponent(site.account_slug)+'/env?site_id='+encodeURIComponent(site.id);
  const created=await request(accountPath,'POST',body);
  if(!Array.isArray(created)||missing.some(key=>!created.some(x=>x&&x.key===key)))throw Error('Netlify no confirmó todas las variables creadas');
