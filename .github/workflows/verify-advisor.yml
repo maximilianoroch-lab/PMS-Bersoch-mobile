@@ -14,8 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test read-only env inspection
-        run: node --test release/env-status.test.cjs
+      - name: Test Netlify API environment creation without network writes
+        run: node --test release/env-status.test.cjs release/netlify-env.test.cjs
       - name: Inspect only Netlify variable presence and scope, never values
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
