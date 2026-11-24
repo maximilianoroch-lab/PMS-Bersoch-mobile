@@ -42,27 +42,13 @@ async function publish(){
   let raw;try{raw=execFileSync(cli,['env:get',name,'--context','production','--scope','functions','--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30000,env:{...process.env,NETLIFY_SITE_ID:site.id}})}catch{throw Error('No se pudo verificar variable: '+name)}
   return parseEnvValue(raw,name,optional);
  }
- if(POLICY.personal&&process.env.PMS_GOOGLE_SERVICE_ACCOUNT){
-  let info;try{info=JSON.parse(process.env.PMS_GOOGLE_SERVICE_ACCOUNT)}catch{throw Error('JSON lector inválido')}
+ if(POLICY.personal){
+  let info;try{info=JSON.parse(process.env.PMS_GOOGLE_SERVICE_ACCOUNT||'')}catch{throw Error('Falta JSON lector válido en GitHub Secrets')}
   const sid=fs.readFileSync('index.html','utf8').match(/const SHEET_ID='([^']+)'/);
   if(!sid||info.client_email!==POLICY.reader||info.token_uri!=='https://oauth2.googleapis.com/token'||info.type!=='service_account'||!info.private_key)throw Error('JSON no corresponde al lector autorizado');
   const desired={PMS_DATA_MODE:'private',PMS_GOOGLE_CLIENT_ID:POLICY.clientId,PMS_ALLOWED_EMAILS:'maximilianoroch@gmail.com',PMS_PERSONAL_SPREADSHEET_ID:sid[1],PMS_GOOGLE_SERVICE_ACCOUNT:JSON.stringify(info)};
-  for(const [key,value] of Object.entries(desired)){
-   const current=envValue(key,true);
-   if(current){
-    let same=current===value;
-    if(key==='PMS_GOOGLE_SERVICE_ACCOUNT'){try{const c=JSON.parse(current);same=c.client_email===info.client_email&&c.private_key===info.private_key&&c.token_uri===info.token_uri&&c.type===info.type}catch{same=false}}
-    if(!same)throw Error('Variable existente diferente: '+key+'; revisar sin sobrescribir');
-   }else{try{execFileSync(cli,['env:set',key,value,'--context','production','--scope','functions'],{stdio:['ignore','pipe','pipe'],timeout:30000,env:{...process.env,NETLIFY_SITE_ID:site.id}})}catch{throw Error('No se confirmó variable: '+key+'; revisar sin publicar')}}
-  }
- }
- if(POLICY.personal){
-  if(envValue('PMS_DATA_MODE')!=='private'||envValue('PMS_GOOGLE_CLIENT_ID')!==POLICY.clientId)throw Error('Modo privado/cliente OAuth no verificado');
-  if(!envValue('PMS_ALLOWED_EMAILS').split(',').map(x=>x.trim().toLowerCase()).includes('maximilianoroch@gmail.com'))throw Error('Cuenta Max no autorizada');
-  const expectedSheet=fs.readFileSync('index.html','utf8').match(/const SHEET_ID='([^']+)'/);
-  if(!expectedSheet||envValue('PMS_PERSONAL_SPREADSHEET_ID')!==expectedSheet[1])throw Error('Base personal incorrecta');
-  let account;try{account=JSON.parse(envValue('PMS_GOOGLE_SERVICE_ACCOUNT'))}catch{throw Error('Credencial lectora inválida')}
-  if(account.client_email!==POLICY.reader||account.token_uri!=='https://oauth2.googleapis.com/token'||account.type!=='service_account'||!account.private_key)throw Error('Credencial lectora incorrecta');
+  const {configurePersonalEnv}=require('./netlify-env.cjs');
+  await configurePersonalEnv(site,token,desired);
  }else if(envValue('PMS_DATA_MODE',true)==='private')throw Error('DEMO no debe utilizar modo privado personal');
  // Exactly one publication attempt; no retries, no activation of automatic builds.
  let result;try{result=JSON.parse(execFileSync(cli,['deploy','--prod','--no-build','--dir','release-static','--functions','netlify/functions','--message','Maestro Max '+sha,'--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:240000,env:{...process.env,NETLIFY_SITE_ID:site.id}}))}catch{throw Error('Publicación no confirmada. NO reintentar: revisar Netlify y saldo.')}
