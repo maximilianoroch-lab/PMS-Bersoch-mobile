@@ -39,7 +39,7 @@ async function publish(){
  const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
  guard({sha:process.env.EXPECTED_SHA,actualSha:sha,approval:process.env.RELEASE_APPROVAL,credits:process.env.CREDITS_AVAILABLE,checkedAt:process.env.CREDITS_CHECKED_AT,siteId},site);
  function envValue(name,optional=false){
-  let raw;try{raw=execFileSync(cli,['env:get',name,'--site',siteId,'--context','production','--scope','functions','--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30000})}catch{throw Error('No se pudo verificar variable: '+name)}
+  let raw;try{raw=execFileSync(cli,['env:get',name,'--context','production','--scope','functions','--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30000,env:{...process.env,NETLIFY_SITE_ID:site.id}})}catch{throw Error('No se pudo verificar variable: '+name)}
   return parseEnvValue(raw,name,optional);
  }
  if(POLICY.personal&&process.env.PMS_GOOGLE_SERVICE_ACCOUNT){
@@ -53,7 +53,7 @@ async function publish(){
     let same=current===value;
     if(key==='PMS_GOOGLE_SERVICE_ACCOUNT'){try{const c=JSON.parse(current);same=c.client_email===info.client_email&&c.private_key===info.private_key&&c.token_uri===info.token_uri&&c.type===info.type}catch{same=false}}
     if(!same)throw Error('Variable existente diferente: '+key+'; revisar sin sobrescribir');
-   }else{try{execFileSync(cli,['env:set',key,value,'--site',siteId,'--context','production','--scope','functions'],{stdio:['ignore','pipe','pipe'],timeout:30000})}catch{throw Error('No se confirmó variable: '+key+'; revisar sin publicar')}}
+   }else{try{execFileSync(cli,['env:set',key,value,'--context','production','--scope','functions'],{stdio:['ignore','pipe','pipe'],timeout:30000,env:{...process.env,NETLIFY_SITE_ID:site.id}})}catch{throw Error('No se confirmó variable: '+key+'; revisar sin publicar')}}
   }
  }
  if(POLICY.personal){
@@ -65,7 +65,7 @@ async function publish(){
   if(account.client_email!==POLICY.reader||account.token_uri!=='https://oauth2.googleapis.com/token'||account.type!=='service_account'||!account.private_key)throw Error('Credencial lectora incorrecta');
  }else if(envValue('PMS_DATA_MODE',true)==='private')throw Error('DEMO no debe utilizar modo privado personal');
  // Exactly one publication attempt; no retries, no activation of automatic builds.
- let result;try{result=JSON.parse(execFileSync(cli,['deploy','--prod','--no-build','--dir','release-static','--functions','netlify/functions','--site',siteId,'--message','Maestro Max '+sha,'--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:240000}))}catch{throw Error('Publicación no confirmada. NO reintentar: revisar Netlify y saldo.')}
+ let result;try{result=JSON.parse(execFileSync(cli,['deploy','--prod','--no-build','--dir','release-static','--functions','netlify/functions','--message','Maestro Max '+sha,'--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:240000,env:{...process.env,NETLIFY_SITE_ID:site.id}}))}catch{throw Error('Publicación no confirmada. NO reintentar: revisar Netlify y saldo.')}
  fs.writeFileSync('release-result.json',JSON.stringify({source_sha:sha,deploy_id:result.deploy_id,url:result.deploy_url||result.url,rollback_deploy:POLICY.rollback},null,2));
  console.log('Publicación respondió; registrar ID y verificar contenido real antes de declarar instalación completa.');
 }
