@@ -9,16 +9,20 @@ on:
         default: prepare
       expected_sha:
         description: Full approved commit SHA
+        default: faedd86b9f4b755a3ddc551d07190f8e1dd6d228
         required: true
         type: string
       approval:
         description: PUBLICAR site-name full-SHA (publication only)
+        default: PUBLICAR pms-bersoch-mobile faedd86b9f4b755a3ddc551d07190f8e1dd6d228
         type: string
       credits_available:
-        description: Current available credits, verified by Max (publication only)
+        description: Current available credits, verified by Max
+        required: true
         type: string
       credits_checked_at:
         description: UTC timestamp, ISO8601, less than 30 minutes old
+        required: true
         type: string
 permissions:
   contents: read
