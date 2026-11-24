@@ -12,10 +12,15 @@ test('only confirmed missing JSON value may be treated as optional',()=>{assert.
 test('API/CLI errors cannot be mistaken for absent config or leak response',()=>{for(const raw of ['SECRET_FIXTURE unauthorized','null','[]']){assert.throws(()=>parseEnvValue(raw,'KEY',true),e=>!e.message.includes('SECRET_FIXTURE'));}});
 test('resolved JSON values preserve actual secret internally without logging',()=>assert.equal(parseEnvValue('{"KEY":"synthetic"}','KEY'),'synthetic'));
 
-test('production CLI commands use the verified site ID as an environment variable, never an unsupported site flag',()=>{
+test('publication uses verified Netlify site identity and site-scoped API, never unsupported flags',()=>{
  const fs=require('node:fs'),source=fs.readFileSync(require.resolve('./controlled-mobile.cjs'),'utf8');
- for(const command of ['env:get','env:set','deploy'])assert.ok(source.includes("'"+command+"'"),'expected '+command+' operation');
- assert.ok(source.includes('NETLIFY_SITE_ID:site.id'),'Netlify must use the API-verified site ID');
- assert.ok(!source.includes("'--site',siteId"),'unrecognized --site must not be sent to pinned CLI');
- assert.ok(source.includes("published_deploy?.id!==POLICY.rollback"),'rollback comparison stays enforced');
+ const env=fs.readFileSync(require.resolve('./netlify-env.cjs'),'utf8');
+ assert.ok(source.includes("NETLIFY_SITE_ID:site.id"),'deploy CLI must target verified site');
+ assert.ok(source.includes("'deploy'"),'deployment operation must be preserved');
+ assert.ok(source.includes('configurePersonalEnv(site,token,desired)'),'site-specific env configuration must be enforced');
+ assert.ok(!source.includes("'--site',siteId"),'unsupported site flag must not be sent');
+ assert.ok(!source.includes("'env:set'"),'legacy env:set cannot be used to bypass API verification');
+ assert.ok(env.includes("accountPath='accounts/'"),'scoped account API must create missing site variables');
+ assert.ok(env.includes("+'/env?site_id='"),'API POST must include the verified site ID');
+ assert.ok(source.includes("published_deploy?.id!==POLICY.rollback"),'rollback must stay enforced');
 });
