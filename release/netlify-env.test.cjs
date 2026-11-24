@@ -11,7 +11,7 @@ test('reports missing keys without silently treating an incorrect value as absen
 });
 test('creates site-scoped values once, confirms readback and protects reader secret',async()=>{
  let state=[],posts=0;
- const fetcher=async(url,opts)=>{if(opts.method==='POST'){posts++;assert.match(url,/accounts\/synthetic-account\/env\?site_id=synthetic-site/);const items=JSON.parse(opts.body);assert.deepEqual(items.map(x=>x.key),Object.keys(desired));assert.deepEqual(items.find(x=>x.key==='PMS_GOOGLE_SERVICE_ACCOUNT').is_secret,true);state=items.map(x=>entry(x.key,x.values[0].value,x.is_secret));return {ok:true,json:async()=>state};}return {ok:true,json:async()=>state};};
+ const fetcher=async(url,opts)=>{if(opts.method==='POST'){posts++;assert.match(url,/accounts\/synthetic-account\/env\?site_id=synthetic-site/);const items=JSON.parse(opts.body);assert.deepEqual(items.map(x=>x.key),Object.keys(desired));assert.deepEqual(items.find(x=>x.key==='PMS_GOOGLE_SERVICE_ACCOUNT').is_secret,true);assert.deepEqual(items.find(x=>x.key==='PMS_GOOGLE_SERVICE_ACCOUNT').scopes,['builds','functions','runtime']);assert.ok(items.filter(x=>!x.is_secret).every(x=>!Object.hasOwn(x,'scopes')));state=items.map(x=>entry(x.key,x.values[0].value,x.is_secret));return {ok:true,json:async()=>state};}return {ok:true,json:async()=>state};};
  await configurePersonalEnv(site,'synthetic-token',desired,fetcher);
  assert.equal(posts,1);
  assert.equal(checkVariables(state,{PMS_DATA_MODE:'private',PMS_GOOGLE_CLIENT_ID:'synthetic-client'}).length,0);
