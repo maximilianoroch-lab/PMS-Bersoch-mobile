@@ -9,12 +9,12 @@ on:
         default: prepare
       expected_sha:
         description: Full approved commit SHA
-        default: 22c5ccab853d7dbf08de517142ca2021de9cdd07
+        default: 0126495c1bc63c47d3e9c40216c1a52c07dd2e71
         required: true
         type: string
       approval:
         description: PUBLICAR site-name full-SHA (publication only)
-        default: PUBLICAR pms-bersoch-mobile 22c5ccab853d7dbf08de517142ca2021de9cdd07
+        default: PUBLICAR pms-bersoch-mobile 0126495c1bc63c47d3e9c40216c1a52c07dd2e71
         type: string
       credits_available:
         description: Current available credits, verified by Max
@@ -45,7 +45,7 @@ jobs:
           node-version: '22'
       - name: Verify reviewed commit and local release guards
         run: |
-          node --test release/guard.test.cjs
+          node --test release/*.test.cjs
           node release/controlled-mobile.cjs prepare
       - name: Install application dependencies when locked
         run: |
