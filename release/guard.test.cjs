@@ -11,3 +11,11 @@ const {parseEnvValue}=require('./controlled-mobile.cjs');
 test('only confirmed missing JSON value may be treated as optional',()=>{assert.equal(parseEnvValue('{}','KEY',true),'');assert.throws(()=>parseEnvValue('{}','KEY'));});
 test('API/CLI errors cannot be mistaken for absent config or leak response',()=>{for(const raw of ['SECRET_FIXTURE unauthorized','null','[]']){assert.throws(()=>parseEnvValue(raw,'KEY',true),e=>!e.message.includes('SECRET_FIXTURE'));}});
 test('resolved JSON values preserve actual secret internally without logging',()=>assert.equal(parseEnvValue('{"KEY":"synthetic"}','KEY'),'synthetic'));
+
+test('production CLI commands use the verified site ID as an environment variable, never an unsupported site flag',()=>{
+ const fs=require('node:fs'),source=fs.readFileSync(require.resolve('./controlled-mobile.cjs'),'utf8');
+ for(const command of ['env:get','env:set','deploy'])assert.ok(source.includes("'"+command+"'"),'expected '+command+' operation');
+ assert.ok(source.includes('NETLIFY_SITE_ID:site.id'),'Netlify must use the API-verified site ID');
+ assert.ok(!source.includes("'--site',siteId"),'unrecognized --site must not be sent to pinned CLI');
+ assert.ok(source.includes("published_deploy?.id!==POLICY.rollback"),'rollback comparison stays enforced');
+});
