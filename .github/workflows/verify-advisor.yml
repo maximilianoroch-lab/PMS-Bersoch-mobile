@@ -6,6 +6,20 @@ on:
       - main
       - feature/cash-multimoneda-auditoria
 jobs:
+  safe-netlify-env-metadata:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test read-only env inspection
+        run: node --test release/env-status.test.cjs
+      - name: Inspect only Netlify variable presence and scope, never values
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: node release/env-status.cjs
   advisor-tests:
     runs-on: ubuntu-24.04
     steps:
