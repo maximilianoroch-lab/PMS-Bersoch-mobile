@@ -39,7 +39,7 @@ jobs:
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
-          node --test release/guard.test.cjs
+          node --test release/*.test.cjs
           node release/controlled-mobile.cjs prepare
       - uses: actions/upload-artifact@v4
         with:
