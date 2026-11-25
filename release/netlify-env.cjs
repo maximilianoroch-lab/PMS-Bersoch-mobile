@@ -23,7 +23,7 @@ function checkVariables(vars,desired,strictExisting=true){
  }
  return missing;
 }
-async function configurePersonalEnv(site,token,desired,fetcher=fetch){
+async function configurePersonalEnv(site,token,desired,fetcher=fetch,options={}){
  if(!site?.id||!site?.account_slug||!token)throw Error('Faltan sitio/propietario/token para configurar');
  const headers={Authorization:'Bearer '+token};
  async function request(url,method='GET',body){
@@ -33,7 +33,9 @@ async function configurePersonalEnv(site,token,desired,fetcher=fetch){
  }
  const sitePath='sites/'+encodeURIComponent(site.id)+'/env';
  const initial=await request(sitePath);
- const missing=checkVariables(initial,desired,true);
+ const preserve=options.preserveExisting===true;
+ const missing=checkVariables(initial,desired,!preserve);
+ if(preserve&&missing.length)throw Error('Actualización: faltan variables de producción; revisar sin modificar');
  if(!missing.length)return;
  const body=missing.map(key=>({key,...(key==='PMS_GOOGLE_SERVICE_ACCOUNT'?{scopes:['builds','functions','runtime']}:{}),is_secret:key==='PMS_GOOGLE_SERVICE_ACCOUNT',values:[{context:'production',value:desired[key]}]}));
  const accountPath='accounts/'+encodeURIComponent(site.account_slug)+'/env?site_id='+encodeURIComponent(site.id);
