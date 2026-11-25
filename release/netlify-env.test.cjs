@@ -28,3 +28,5 @@ test('does not overwrite prior variables or unreadable credentials',async()=>{
  await assert.rejects(configurePersonalEnv(site,'synthetic-token',desired,fetcher),/diferente/);
  assert.equal(writes,0);
 });
+
+test('reviewed update preserves configured protected secret without any writes',async()=>{let writes=0;const state=Object.entries(desired).map(([k,v])=>entry(k,v,k==='PMS_GOOGLE_SERVICE_ACCOUNT'));const fetcher=async(url,opts)=>{if(opts.method!=='GET')writes++;return {ok:true,json:async()=>state};};await configurePersonalEnv(site,'synthetic-token',desired,fetcher,{preserveExisting:true});assert.equal(writes,0);state.pop();await assert.rejects(configurePersonalEnv(site,'synthetic-token',desired,fetcher,{preserveExisting:true}),/faltan variables/);assert.equal(writes,0);});

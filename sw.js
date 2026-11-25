@@ -1,4 +1,4 @@
-const CACHE='pms-bersoch-mobile-private-prepared-2';
+const CACHE='pms-bersoch-mobile-improvements-v1';
 const ASSETS=['./','./index.html','./privacy-client.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{
   self.skipWaiting();

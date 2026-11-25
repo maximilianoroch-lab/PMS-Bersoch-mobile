@@ -17,7 +17,7 @@ test('publication uses verified Netlify site identity and site-scoped API, never
  const env=fs.readFileSync(require.resolve('./netlify-env.cjs'),'utf8');
  assert.ok(source.includes("NETLIFY_SITE_ID:site.id"),'deploy CLI must target verified site');
  assert.ok(source.includes("'deploy'"),'deployment operation must be preserved');
- assert.ok(source.includes('configurePersonalEnv(site,token,desired)'),'site-specific env configuration must be enforced');
+ assert.ok(source.includes('configurePersonalEnv(site,token,desired,fetch,{preserveExisting:POLICY.preserveExisting===true})'),'site-specific env configuration must be enforced');
  assert.ok(!source.includes("'--site',siteId"),'unsupported site flag must not be sent');
  assert.ok(!source.includes("'env:set'"),'legacy env:set cannot be used to bypass API verification');
  assert.ok(env.includes("accountPath='accounts/'"),'scoped account API must create missing site variables');

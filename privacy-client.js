@@ -30,11 +30,11 @@
     if(config.mode==='public'){state='public';doc.body.dataset.privacyState='public';await onReady();return;}
     if(config.mode!=='private'||!String(config.clientId||'').endsWith('.apps.googleusercontent.com'))throw Error();
     state='private';lock('Ingresá con tu cuenta autorizada para ver la cartera personal.');
-    doc.getElementById('privateLogout').hidden=false;
+    doc.getElementById('privateLogout').hidden=true;
     doc.getElementById('privateLogout').onclick=()=>{lock('Sesión cerrada.');w.location.reload();};
     const script=doc.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;
-    script.onload=()=>{w.google.accounts.id.initialize({client_id:config.clientId,callback:accept,auto_select:false});
-     w.google.accounts.id.renderButton(doc.getElementById('privateSignIn'),{theme:'outline',size:'large'});};
+    script.onload=()=>{w.google.accounts.id.initialize({client_id:config.clientId,callback:accept,auto_select:true});
+     w.google.accounts.id.renderButton(doc.getElementById('privateSignIn'),{theme:'outline',size:'large'});w.google.accounts.id.prompt?.();};
     script.onerror=()=>message('No se pudo cargar el ingreso con Google. Revisá la conexión.');doc.head.appendChild(script);
    }catch{state='blocked';lock('No se pudo verificar la configuración de acceso. No se muestran datos guardados.');}
   }

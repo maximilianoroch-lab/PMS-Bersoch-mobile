@@ -37,12 +37,13 @@ const server=http.createServer((req,res)=>{
   await page.waitForFunction(()=>document.body.dataset.privacyState==='open');
   assert.equal(bundleCalls,1);assert.equal(publicCalls,0);assert.match(await page.locator('#totalWealth').innerText(),/300/);
   assert.equal(await page.evaluate(()=>localStorage.getItem('pms-v2-monthly-black-annual-20261027')),null);
-  await page.getByRole('button',{name:'Cerrar sesión',exact:true}).click();
+  assert.equal(await page.locator('#privateLogout').isVisible(),false);
+  await page.reload();
   await page.getByRole('button',{name:'Ingresar fixture'}).waitFor();
   assert.equal(await page.locator('.brand').isVisible(),false);assert.equal(bundleCalls,1);
   deny=true;await page.getByRole('button',{name:'Ingresar fixture'}).click();
   await page.waitForFunction(()=>document.getElementById('privacyMessage').textContent.includes('Ingresá nuevamente'));
   assert.equal(await page.locator('.brand').isVisible(),false);assert.equal(publicCalls,0);assert.equal(errors.length,0,errors.join('; '));
-  console.log('PASS private browser: no pre-login reads, one authenticated bundle, no persistent personal cache, logout clears view, denied user blocked, DEMO cache retained');
+  console.log('PASS private browser: no pre-login reads, one authenticated bundle, no persistent personal cache, reload clears view, denied user blocked, DEMO cache retained');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());
