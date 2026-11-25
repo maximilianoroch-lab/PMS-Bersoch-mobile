@@ -18,7 +18,7 @@ const server=http.createServer((req,res)=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({headless:true});
  try{
-  const page=await browser.newPage();let bundleCalls=0,publicCalls=0,deny=false;const errors=[];
+  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});let bundleCalls=0,publicCalls=0,deny=false;const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{localStorage.setItem('pms-v2-monthly-black-annual-20261027','old synthetic personal');localStorage.setItem('DEMO-UNRELATED','keep');});
   await page.route('**/*',async route=>{
@@ -35,6 +35,17 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.evaluate(()=>localStorage.getItem('DEMO-UNRELATED')),'keep');
   await page.getByRole('button',{name:'Ingresar fixture'}).click();
   await page.waitForFunction(()=>document.body.dataset.privacyState==='open');
+  await page.screenshot({path:'mobile-resumen.png',fullPage:true});
+  const bar=page.locator('#currentTypeBars .fill').first();assert.ok(await bar.isVisible());const bb=await bar.boundingBox();assert.ok(bb.width>3&&bb.height>5);
+  await page.locator('[data-page="herramientas"]').click();
+  assert.equal(await page.locator('#simFunding').isVisible(),true);
+  assert.equal(await page.locator('#simTicker').evaluate(e=>getComputedStyle(e).borderRadius),'12px');
+  await page.locator('#simFunding').selectOption('Aporte externo');
+  await page.locator('#simAmount').fill('50');await page.locator('#simulateBtn').click();assert.match(await page.locator('#simResult').innerText(),/Resultado simulado/);
+  await page.screenshot({path:'mobile-herramientas.png',fullPage:true});
+  await page.locator('[data-page="diversificacion"]').click();await page.screenshot({path:'mobile-diversificacion.png',fullPage:true});
+  await page.locator('[data-page="evolucion"]').click();assert.match(await page.locator('#periods .active').innerText(),/Semanal/);await page.screenshot({path:'mobile-evolucion.png',fullPage:true});
+  await page.locator('[data-page="resumen"]').click();
   assert.equal(bundleCalls,1);assert.equal(publicCalls,0);assert.match(await page.locator('#totalWealth').innerText(),/300/);
   assert.equal(await page.evaluate(()=>localStorage.getItem('pms-v2-monthly-black-annual-20261027')),null);
   assert.equal(await page.locator('#privateLogout').isVisible(),false);
