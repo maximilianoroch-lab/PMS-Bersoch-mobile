@@ -48,7 +48,7 @@ async function publish(){
   if(!sid||info.client_email!==POLICY.reader||info.token_uri!=='https://oauth2.googleapis.com/token'||info.type!=='service_account'||!info.private_key)throw Error('JSON no corresponde al lector autorizado');
   const desired={PMS_DATA_MODE:'private',PMS_GOOGLE_CLIENT_ID:POLICY.clientId,PMS_ALLOWED_EMAILS:'maximilianoroch@gmail.com',PMS_PERSONAL_SPREADSHEET_ID:sid[1],PMS_GOOGLE_SERVICE_ACCOUNT:JSON.stringify(info)};
   const {configurePersonalEnv}=require('./netlify-env.cjs');
-  await configurePersonalEnv(site,token,desired);
+  await configurePersonalEnv(site,token,desired,fetch,{preserveExisting:POLICY.preserveExisting===true});
  }else if(envValue('PMS_DATA_MODE',true)==='private')throw Error('DEMO no debe utilizar modo privado personal');
  // Exactly one publication attempt; no retries, no activation of automatic builds.
  let result;try{result=JSON.parse(execFileSync(cli,['deploy','--prod','--no-build','--dir','release-static','--functions','netlify/functions','--message','Maestro Max '+sha,'--json'],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:240000,env:{...process.env,NETLIFY_SITE_ID:site.id}}))}catch{throw Error('Publicación no confirmada. NO reintentar: revisar Netlify y saldo.')}
