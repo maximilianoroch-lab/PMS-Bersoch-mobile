@@ -13,10 +13,12 @@ test('cash panel does not contain broken markup string',()=>{
  assert.ok(!html.includes("registrado.</div>'</div>'}"));
 });
 
-test('historical type period selectors are monthly by default and offer four intervals',()=>{
+test('historical type period selectors are monthly by default and offer five intervals without duplicate home chart',()=>{
  assert.match(html,/let typePeriod='M'/);
- for(const name of ['Mensual','Trimestral','Semestral','Anual'])assert.ok(html.includes("'"+name+"'"),name);
- for(const id of ['homeTypePeriods','typePeriods','sharePeriods'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1);
+ assert.ok(!html.includes('id="homeTypePeriods"'));
+ assert.match(html,/period='S'/);
+ for(const name of ['Semanal','Mensual','Trimestral','Semestral','Anual'])assert.ok(html.includes("'"+name+"'"),name);
+ for(const id of ['typePeriods','sharePeriods'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1);
 });
 test('historical type groups retain the last available month, not synthetic interpolation',()=>{
  const code=html.slice(html.indexOf("let typePeriod='M'"),html.indexOf('async function getCSV(',html.indexOf("let typePeriod='M'")));
