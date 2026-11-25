@@ -9,12 +9,12 @@ on:
         default: prepare
       expected_sha:
         description: Full approved commit SHA
-        default: 758d998b98acc7b4984111283e33af0285a29889
+        default: 8e8f6e96fb1f33568d9da283e5c4a1c09dc46be9
         required: true
         type: string
       approval:
         description: PUBLICAR site-name full-SHA (publication only)
-        default: PUBLICAR pms-bersoch-mobile 758d998b98acc7b4984111283e33af0285a29889
+        default: PUBLICAR pms-bersoch-mobile 8e8f6e96fb1f33568d9da283e5c4a1c09dc46be9
         type: string
       credits_available:
         description: Current available credits, verified by Max
